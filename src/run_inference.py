@@ -16,7 +16,7 @@ from inference_util import (
     Model,
     HandGPTResponse,
     do_chat_completion,
-    # parse_few_shot_response,
+    parse_few_shot_response,
     write_inference_csv,
     InferenceResult,
     use_chatgpt_to_extract_answer,
@@ -32,6 +32,14 @@ First, think through each of the options. Inside <discussion></discussion> \
 tags, briefly discuss each option and decide on the best answer choice. Then, \
 inside <answer></answer> tags, write the letter of the answer you have chosen.
 """
+
+# This is the number of times we can try per request. This accounts for the
+# off-chance that the openAI servers fail.
+MAX_ATTEMPTS_PER_REQUEST = 3
+# Given that ChatGPT is not deterministic, we may want to ask the same
+# question multiple times. For example, if this is 5, then we will ask
+# each question 5 times.
+ENSEMBLING_COUNT = 1
 
 
 def _run_inference(client, selected_model, prompt, parsing_fn):
@@ -87,19 +95,10 @@ IMAGE_EXEMPLARS = get_n_examples_from_each_category(
     IMAGE_TRAIN_SET, 1, list(Category)
 )
 
-# This is the number of times we can try per request. This accounts for the
-# off-chance that the openAI servers fail.
-MAX_ATTEMPTS_PER_REQUEST = 3
-# Given that ChatGPT is not deterministic, we may want to ask the same
-# question multiple times. For example, if this is 5, then we will ask
-# each question 5 times.
-ENSEMBLING_COUNT = 1
-
 
 def _run_inference_with_configs(
     test_year: int,
-    text_model: Model,
-    image_model: Model,
+    model: Model,
     preamble,
     text_exemplars,
     image_exemplars,
@@ -121,15 +120,13 @@ def _run_inference_with_configs(
         )
         i += 1
 
-        selected_model = text_model
         exemplars = text_exemplars
         # TODO(zkbaum) now that text and vision are in one model, we might
         # be able to get rid of this and simplify.
         if entry.question_has_text_and_images():
-            selected_model = image_model
             exemplars = image_exemplars
 
-            if selected_model is None:
+            if model == Model.GPT3_5:
                 print("   skipping because gpt3.5 does not support image")
                 continue
 
@@ -138,10 +135,8 @@ def _run_inference_with_configs(
         responses = []
         for n in range(ENSEMBLING_COUNT):
             print(f"   doing ensembling query {n} of {ENSEMBLING_COUNT}")
-            response = _run_inference(
-                CLIENT, selected_model, prompt, parsing_fn
-            )
-            # print(f'[debug] got response: {response}')
+            response = _run_inference(CLIENT, model, prompt, parsing_fn)
+            # print(f"[debug] got response: {response}")
             responses.append(response)
 
         results.append(
@@ -149,7 +144,7 @@ def _run_inference_with_configs(
                 question=entry,
                 prompt=prompt,
                 question_type=entry.get_question_content_type(),
-                model=selected_model,
+                model=model,
                 responses=responses,
             )
         )
@@ -161,92 +156,34 @@ def _run_inference_with_configs(
 # TODO(zkbaum) we should probably do these in parallel otherwise we'll be
 # waiting around for a day.
 # for year in [2008, 2009, 2010, 2011, 2013]:
-#     # GPT3.5 no prompt
-#     _run_inference_with_configs(
-#         test_year=year,
-#         text_model=Model.GPT3_5,
-#         image_model=None,
-#         preamble=PREAMBLE_GENERIC,
-#         text_exemplars=NO_PROMPT_EXEMPLARS,
-#         image_exemplars = None,
-#         parsing_fn = parse_response_answeronly,
-#         exp_name="gpt3_no_prompt"
-#     )
-#     # GPT4 with no prompt
-#     _run_inference_with_configs(
-#         test_year=year,
-#         text_model=Model.GPT4,
-#         image_model=Model.GPT4_VISION,
-#         preamble=PREAMBLE_GENERIC,
-#         text_exemplars= NO_PROMPT_EXEMPLARS,
-#         image_exemplars = NO_PROMPT_EXEMPLARS,
-#         parsing_fn = parse_response_answeronly,
-#         exp_name="gpt4_no_prompt"
-#     )
-#     # GPT4 WITH few shot prompt
-#     _run_inference_with_configs(
-#         test_year=year,
-#         text_model=Model.GPT4,
-#         image_model=Model.GPT4_VISION,
-#         preamble=PREAMBLE_DETAILED,
-#         text_exemplars= TEXT_EXEMPLARS,
-#         image_exemplars = IMAGE_EXEMPLARS,
-#         parsing_fn = parse_response,
-#         exp_name="gpt4_few_shot"
-#     )
-
 for year in [2013]:
     # GPT3.5 zero-shot
-    # _run_inference_with_configs(
-    #     test_year=year,
-    #     text_model=Model.GPT3_5,
-    #     image_model=None,
-    #     preamble=PREAMBLE_GENERIC,
-    #     text_exemplars=NO_PROMPT_EXEMPLARS,
-    #     image_exemplars = None,
-    #     parsing_fn = parse_response_answeronly,
-    #     exp_name="gpt3_no_prompt"
-    # )
+    _run_inference_with_configs(
+        test_year=year,
+        model=Model.GPT3_5,
+        preamble=None,
+        text_exemplars=None,
+        image_exemplars=None,
+        parsing_fn=use_chatgpt_to_extract_answer,
+        exp_name="gpt3_zero_shot",
+    )
     # GPT4 zero-shot
     _run_inference_with_configs(
         test_year=year,
-        text_model=Model.GPT4,
-        image_model=Model.GPT4_VISION,
+        model=Model.GPT4,
         preamble=None,
         text_exemplars=None,
         image_exemplars=None,
         parsing_fn=use_chatgpt_to_extract_answer,
         exp_name="gpt4_zero_shot",
     )
-    # GPT4 WITH few shot prompt
-    # _run_inference_with_configs(
-    #     test_year=year,
-    #     text_model=Model.GPT4,
-    #     image_model=Model.GPT4_VISION,
-    #     preamble=PREAMBLE_DETAILED,
-    #     text_exemplars= TEXT_EXEMPLARS,
-    #     image_exemplars = IMAGE_EXEMPLARS,
-    #     parsing_fn = parse_response,
-    #     exp_name="gpt4_few_shot_with2008train"
-    # )
-    # _run_inference_with_configs(
-    #     test_year=year,
-    #     text_model=Model.GPT4,
-    #     image_model=Model.GPT4_VISION,
-    #     preamble=PREAMBLE_DETAILED,
-    #     text_exemplars=TEXT_EXEMPLARS[0:1],
-    #     image_exemplars=IMAGE_EXEMPLARS[0:1],
-    #     parsing_fn=parse_response,
-    #     exp_name="gpt4_one_shot_with2008train",
-    # )
-    # _run_inference_with_configs(
-    #     test_year=year,
-    #     text_model=Model.GPT4,
-    #     image_model=Model.GPT4_VISION,
-    #     preamble=PREAMBLE_DETAILED,
-    #     text_exemplars= TEXT_EXEMPLARS,
-    #     image_exemplars = IMAGE_EXEMPLARS,
-    #     parsing_fn = parse_response,
-    #     exp_name="gpt4_one_shot_knn_with2008train",
-    #     is_one_shot=True
-    # )
+    # GPT4 few shot
+    _run_inference_with_configs(
+        test_year=year,
+        model=Model.GPT4,
+        preamble=PREAMBLE_DETAILED,
+        text_exemplars=TEXT_EXEMPLARS,
+        image_exemplars=IMAGE_EXEMPLARS,
+        parsing_fn=parse_few_shot_response,
+        exp_name="gpt4_few_shot",
+    )

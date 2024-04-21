@@ -11,7 +11,7 @@ import csv
 from private import (
     ROOT_DIR,
     EXEMPLARS_FOR_EXTRACTOR,
-    REFERENCE_FILE_ID_MAPPINGS_2013,
+    get_file_id_to_reference_mappings_2013,
 )
 
 
@@ -30,8 +30,9 @@ class Model(Enum):
 def get_model_string(model: Model):
     model_enum_to_str = {
         Model.GPT3_5: "gpt-3.5-turbo-0125",
-        Model.GPT4: "gpt-4-turbo-preview",
-        Model.GPT4_VISION: "gpt-4-vision-preview",
+        Model.GPT4: "gpt-4-turbo-2024-04-09",
+        # GPT4_VISION is no longer needed now that gpt-4-turbo support vision.
+        # Model.GPT4_VISION: "gpt-4-vision-preview",
         Model.FtFeb11NoExemplars: "ft:gpt-3.5-turbo-1106:personal::8qxFN6cX",
         Model.FtFeb11WithExamplars: "ft:gpt-3.5-turbo-1106:personal::8qxNawaE",
     }
@@ -131,14 +132,16 @@ def parse_few_shot_response(client, response):
         return "PARSE_ERROR", "PARSE_ERROR"
 
     txt = response.choices[0].message.content
-    return parse_response_string(txt)
+    discussion, answer = parse_response_string(txt)
+    print(f"   used regex to extract answer {answer}")
+    return discussion, answer
 
 
 def _replace_citations(raw_discussion, citations, file_id_mapping):
     # Hard coding the really big files...
     # Note we assume
     if not file_id_mapping:
-        file_id_mapping = REFERENCE_FILE_ID_MAPPINGS_2013
+        file_id_mapping = get_file_id_to_reference_mappings_2013()
 
     final_discussion = raw_discussion
     num = 1
@@ -252,8 +255,9 @@ def use_chatgpt_to_extract_answer(client, original_response):
     extractor_prompt += EXEMPLARS_FOR_EXTRACTOR
     extractor_prompt += [{"role": "user", "content": f"{original_response}"}]
 
+    # print(extractor_prompt)
     response = client.chat.completions.create(
-        model="gpt-4-turbo-preview",
+        model="gpt-4-turbo",
         messages=extractor_prompt,
         max_tokens=256,
     )
