@@ -239,13 +239,7 @@ def write_inference_csv(
     print(f"Data has been written to {filepath}")
 
 
-def use_chatgpt_to_extract_answer(client, original_response):
-    """
-    In the zero-shot approach, ChatGPT gives inconsistent output formatting.
-    Therefore, we will use a seperate model to extract the answer.
-    """
-    print("   got zero-shot response, extracting answer...")
-    original_response = original_response.choices[0].message.content
+def _use_chatgpt_to_extract_answer_internal(client, original_response):
     extractor_prompt = [
         {
             "role": "system",
@@ -258,6 +252,7 @@ def use_chatgpt_to_extract_answer(client, original_response):
     # print(extractor_prompt)
     response = client.chat.completions.create(
         model="gpt-4-turbo",
+        # model="gpt-3.5-turbo",
         messages=extractor_prompt,
         max_tokens=256,
     )
@@ -265,3 +260,13 @@ def use_chatgpt_to_extract_answer(client, original_response):
     print(f"   used chatgpt to extract answer {extracted_answer}")
 
     return original_response, extracted_answer
+
+
+def use_chatgpt_to_extract_answer(client, original_response):
+    """
+    In the zero-shot approach, ChatGPT gives inconsistent output formatting.
+    Therefore, we will use a seperate model to extract the answer.
+    """
+    print("   got zero-shot response, extracting answer...")
+    original_response = original_response.choices[0].message.content
+    return _use_chatgpt_to_extract_answer_internal(client, original_response)
