@@ -9,7 +9,7 @@ from prompt_util import generate_prompt_messages
 from inference_util import (
     Model,
     do_chat_completion,
-    parse_few_shot_response,
+    use_regex_to_extract_answer,
     write_inference_csv,
 )
 import random

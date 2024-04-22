@@ -17,7 +17,7 @@ from inference_util import (
     Model,
     HandGPTResponse,
     do_chat_completion,
-    parse_few_shot_response,
+    use_regex_to_extract_answer,
     parse_response_answeronly,
     write_inference_csv,
     InferenceResult,
@@ -231,7 +231,7 @@ for year in [2013]:
         preamble=PREAMBLE_GENERIC,
         text_exemplars=NO_PROMPT_EXEMPLARS,
         image_exemplars=NO_PROMPT_EXEMPLARS,
-        parsing_fn=parse_few_shot_response,
+        parsing_fn=use_regex_to_extract_answer,
         exp_name="gpt4_no_prompt_rag",
     )
     # GPT4 WITH few shot prompt

@@ -119,7 +119,7 @@ def parse_response_string(txt: str):
         return "PARSE_ERROR", "PARSE_ERROR"
 
 
-def parse_few_shot_response(client, response):
+def use_regex_to_extract_answer(client, response):
     """
     Parses the few-shot response using regex.
     Note 'client' is unused...this is a hack because the zero shot

@@ -16,7 +16,7 @@ from inference_util import (
     Model,
     HandGPTResponse,
     do_chat_completion,
-    parse_few_shot_response,
+    use_regex_to_extract_answer,
     write_inference_csv,
     InferenceResult,
     use_chatgpt_to_extract_answer,
@@ -184,6 +184,6 @@ for year in [2013]:
         preamble=PREAMBLE_DETAILED,
         text_exemplars=TEXT_EXEMPLARS,
         image_exemplars=IMAGE_EXEMPLARS,
-        parsing_fn=parse_few_shot_response,
+        parsing_fn=use_regex_to_extract_answer,
         exp_name="gpt4_few_shot",
     )
