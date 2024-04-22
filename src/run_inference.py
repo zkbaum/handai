@@ -80,19 +80,11 @@ TEXT_TRAIN_SET = (
     .commentary_content_type(ContentType.TEXT_ONLY)
     .build()
 )
-IMAGE_TRAIN_SET = (
-    QuestionsBuilder()
-    .year(TRAIN_YEAR)
-    .question_content_type(ContentType.TEXT_AND_IMAGES)
-    .commentary_content_type(ContentType.TEXT_ONLY)
-    .build()
-)
 
+# We are deliberately only using text exemplars because quality seems to
+# decrease when we use image-based questions in exemplars.
 TEXT_EXEMPLARS = get_n_examples_from_each_category(
     TEXT_TRAIN_SET, 1, list(Category)
-)
-IMAGE_EXEMPLARS = get_n_examples_from_each_category(
-    IMAGE_TRAIN_SET, 1, list(Category)
 )
 
 
@@ -100,8 +92,7 @@ def _run_inference_with_configs(
     test_year: int,
     model: Model,
     preamble,
-    text_exemplars,
-    image_exemplars,
+    exemplars,
     parsing_fn,
     exp_name,
 ):
@@ -120,15 +111,9 @@ def _run_inference_with_configs(
         )
         i += 1
 
-        exemplars = text_exemplars
-        # TODO(zkbaum) now that text and vision are in one model, we might
-        # be able to get rid of this and simplify.
-        if entry.question_has_text_and_images():
-            exemplars = image_exemplars
-
-            if model == Model.GPT3_5:
-                print("   skipping because gpt3.5 does not support image")
-                continue
+        if entry.question_has_text_and_images() and model == Model.GPT3_5:
+            print("   skipping because gpt3.5 does not support image")
+            continue
 
         prompt, _ = create_prompt(preamble, exemplars, entry)
 
@@ -162,8 +147,7 @@ for year in [2013]:
         test_year=year,
         model=Model.GPT3_5,
         preamble=None,
-        text_exemplars=None,
-        image_exemplars=None,
+        exemplars=None,
         parsing_fn=use_chatgpt_to_extract_answer,
         exp_name="gpt3_zero_shot",
     )
@@ -172,18 +156,16 @@ for year in [2013]:
         test_year=year,
         model=Model.GPT4,
         preamble=None,
-        text_exemplars=None,
-        image_exemplars=None,
+        exemplars=None,
         parsing_fn=use_chatgpt_to_extract_answer,
         exp_name="gpt4_zero_shot",
     )
-    # # GPT4 few shot
+    # GPT4 few shot
     _run_inference_with_configs(
         test_year=year,
         model=Model.GPT4,
         preamble=PREAMBLE_DETAILED,
-        text_exemplars=TEXT_EXEMPLARS,
-        image_exemplars=IMAGE_EXEMPLARS,
+        exemplars=TEXT_EXEMPLARS,
         parsing_fn=use_regex_to_extract_answer,
         exp_name="gpt4_few_shot",
     )
