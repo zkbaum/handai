@@ -83,9 +83,7 @@ TEXT_TRAIN_SET = (
 
 # We are deliberately only using text exemplars because quality seems to
 # decrease when we use image-based questions in exemplars.
-TEXT_EXEMPLARS = get_n_examples_from_each_category(
-    TEXT_TRAIN_SET, 1, list(Category)
-)
+TEXT_EXEMPLARS = get_n_examples_from_each_category(TEXT_TRAIN_SET, 1, list(Category))
 
 
 def _run_inference_with_configs(
@@ -115,6 +113,8 @@ def _run_inference_with_configs(
             print("   skipping because gpt3.5 does not support image")
             continue
 
+        # TODO(zkbaum) for zero shot, we should strip out any <question> tags
+        # and figure names to make this as similar to regular use as possible.
         prompt, _ = create_prompt(preamble, exemplars, entry)
 
         responses = []

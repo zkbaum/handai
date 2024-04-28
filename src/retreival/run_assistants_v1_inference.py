@@ -53,8 +53,6 @@ client = OpenAI()
 super_assistant = client.beta.assistants.retrieve(
     # This is the v1 assistant where I combined everything into a few pdfs.
     # "asst_hcPA7VzvVgw5H8xdEdsQliGx"
-    # This is the v2 assistant where I used a vector store of ~300 files.
-    "asst_JqyeCJIXrbsrqLQ6F7W7hsWV"
 )
 # eval_questions = assistant.metadata['questions_selected'].split(',')
 # eval_questions = [int(x) for x in eval_questions]
@@ -158,7 +156,8 @@ def _run_assistant_inference(client, assistant, entry):
 results = []
 i = 0
 MAX_RETRIES = 3
-ENSEMBLING_COUNT = 1
+ENSEMBLING_COUNT = 2
+
 
 for entry in eval_set:
     question_num = str(entry.get_question_number())
@@ -196,5 +195,5 @@ write_inference_csv(
     results,
     references_list=references_list,
     year=2013,
-    exp_name="assistants-v2",
+    exp_name="assistants-v1",
 )

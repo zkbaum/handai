@@ -11,6 +11,7 @@ class Experiment(Enum):
     ZERO_SHOT_GPT3_5 = "zero-shot-gpt3.5"
     ZERO_SHOT_GPT4 = "zero-shot-gpt4"
     FEW_SHOT_GPT4 = "few-shot-gpt4"
+    RAG_FEW_SHOT = "rag-few-shot"
 
 
 def _determine_majority_or_tie(row):
@@ -28,11 +29,7 @@ def _check_unanimity(row):
     """
     Checks if all answers are the same.
     """
-    if (
-        row["chatgpt_answer_0"]
-        == row["chatgpt_answer_1"]
-        == row["chatgpt_answer_2"]
-    ):
+    if row["chatgpt_answer_0"] == row["chatgpt_answer_1"] == row["chatgpt_answer_2"]:
         return row["chatgpt_answer_0"]  # or any as all are the same
     else:
         return "NOT_UNANIMOUS"
@@ -48,22 +45,12 @@ def _parse_inference_results_df(df):
     ].apply(_determine_majority_or_tie, axis=1)
     df["unanimous_or_not"] = df.apply(_check_unanimity, axis=1)
 
-    df["chatgpt_majority_correct"] = (
-        df["majority_answer_or_tie"] == df["actual_answer"]
-    )
-    df["chatgpt_unanimous_correct"] = (
-        df["unanimous_or_not"] == df["actual_answer"]
-    )
+    df["chatgpt_majority_correct"] = df["majority_answer_or_tie"] == df["actual_answer"]
+    df["chatgpt_unanimous_correct"] = df["unanimous_or_not"] == df["actual_answer"]
 
-    df["chatgpt_attempt0_correct"] = (
-        df["chatgpt_answer_0"] == df["actual_answer"]
-    )
-    df["chatgpt_attempt1_correct"] = (
-        df["chatgpt_answer_1"] == df["actual_answer"]
-    )
-    df["chatgpt_attempt2_correct"] = (
-        df["chatgpt_answer_2"] == df["actual_answer"]
-    )
+    df["chatgpt_attempt0_correct"] = df["chatgpt_answer_0"] == df["actual_answer"]
+    df["chatgpt_attempt1_correct"] = df["chatgpt_answer_1"] == df["actual_answer"]
+    df["chatgpt_attempt2_correct"] = df["chatgpt_answer_2"] == df["actual_answer"]
 
     df["human_correct_percentage"] /= 100
 
@@ -103,6 +90,10 @@ dfs = []
 for exp in list(Experiment):
     filepath = get_result_csvpath_for_experiment(exp)
     df = pd.read_csv(filepath)
+    # If you only ran it one time.
+    # if exp == Experiment.RAG_FEW_SHOT:
+    #     df["chatgpt_answer_1"] = df["chatgpt_answer_0"]
+    #     df["chatgpt_answer_2"] = df["chatgpt_answer_0"]
     df = _parse_inference_results_df(df)
     df["experiment_name"] = exp.value
     dfs.append(df)

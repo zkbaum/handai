@@ -11,6 +11,7 @@ import csv
 from private import (
     ROOT_DIR,
     EXEMPLARS_FOR_EXTRACTOR,
+    ASSISTANTS_EXEMPLARS_FOR_EXTRACTOR,
     get_file_id_to_reference_mappings_2013,
 )
 
@@ -119,6 +120,17 @@ def parse_response_string(txt: str):
         return "PARSE_ERROR", "PARSE_ERROR"
 
 
+def use_regex_to_extract_answer_textinput(client, exam_question, txt):
+    """
+    Parses the few-shot response using regex.
+    Note 'client' is unused...this is a hack because the zero shot
+    requires client and I wanted the abstraction to work :)
+    """
+    discussion, answer = parse_response_string(txt)
+    print(f"   used regex to extract answer {answer}")
+    return discussion, answer
+
+
 def use_regex_to_extract_answer(client, response):
     """
     Parses the few-shot response using regex.
@@ -132,9 +144,7 @@ def use_regex_to_extract_answer(client, response):
         return "PARSE_ERROR", "PARSE_ERROR"
 
     txt = response.choices[0].message.content
-    discussion, answer = parse_response_string(txt)
-    print(f"   used regex to extract answer {answer}")
-    return discussion, answer
+    return use_regex_to_extract_answer_textinput(None, None, txt)
 
 
 def _replace_citations(raw_discussion, citations, file_id_mapping):
@@ -169,9 +179,7 @@ def write_inference_csv(
     """
     current_timestamp = datetime.now()
     formatted_timestamp = current_timestamp.strftime("%Y%m%d_%H:%M:%S")
-    filepath = (
-        f"{ROOT_DIR}/out/inference/{year}_{exp_name}_{formatted_timestamp}.csv"
-    )
+    filepath = f"{ROOT_DIR}/out/inference/{year}_{exp_name}_{formatted_timestamp}.csv"
 
     # print(references_list)
     # build using list
@@ -239,7 +247,7 @@ def write_inference_csv(
     print(f"Data has been written to {filepath}")
 
 
-def _use_chatgpt_to_extract_answer_internal(client, original_response):
+def use_chatgpt_to_extract_answer_textinput(client, original_response):
     extractor_prompt = [
         {
             "role": "system",
@@ -262,6 +270,45 @@ def _use_chatgpt_to_extract_answer_internal(client, original_response):
     return original_response, extracted_answer
 
 
+def use_chatgpt_to_extract_answer_textinput_assistants(
+    client, exam_question: ExamQuestion, original_response
+):
+    extractor_prompt = [
+        {
+            "role": "system",
+            "content": 'You are analyzing ChatGPT responses to multiple choice questions. Your task is to extract ChatGPT\'s final answer. \n\nIf you can identify ChatGPT\'s final answer, reply with just that letter inside finalAnswer tags. For example, "<finalAnswer>C</finalAnswer>".\n\nIf you cannot identify the answer, reply with "<finalAnswer>N/A</finalAnswer>" ',
+        },
+    ]
+    extractor_prompt += ASSISTANTS_EXEMPLARS_FOR_EXTRACTOR
+    extractor_prompt += [
+        {
+            "role": "user",
+            "content": f"""<question>{exam_question.format_question()}</question> 
+<response>{original_response}</response>""",
+        }
+    ]
+
+    # print(extractor_prompt)
+    response = client.chat.completions.create(
+        model="gpt-4-turbo",
+        # model="gpt-3.5-turbo",
+        messages=extractor_prompt,
+        max_tokens=256,
+    )
+    response = response.choices[0].message.content
+
+    # print(response)
+    pattern = r"<finalAnswer>(.*?)<\/finalAnswer>"
+    match = re.search(pattern, response, re.DOTALL)
+    extracted_answer = "PARSE_ERROR"
+    if match:
+        extracted_answer = match.group(1)
+
+    print(f"   used chatgpt to extract answer {extracted_answer}")
+
+    return original_response, extracted_answer
+
+
 def use_chatgpt_to_extract_answer(client, original_response):
     """
     In the zero-shot approach, ChatGPT gives inconsistent output formatting.
@@ -269,4 +316,4 @@ def use_chatgpt_to_extract_answer(client, original_response):
     """
     print("   got zero-shot response, extracting answer...")
     original_response = original_response.choices[0].message.content
-    return _use_chatgpt_to_extract_answer_internal(client, original_response)
+    return use_chatgpt_to_extract_answer_textinput(client, original_response)

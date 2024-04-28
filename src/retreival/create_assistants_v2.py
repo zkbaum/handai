@@ -49,6 +49,7 @@ def _create_vector_store(client):
 
 
 OPENAI_CLIENT = OpenAI()
+IS_FEW_SHOT = False
 
 # If you already have the vector store setup, you can just use the old one.
 # It's okay to reveal the id publically because you must be authenticated
@@ -56,13 +57,21 @@ OPENAI_CLIENT = OpenAI()
 vector_store_id = "vs_jbxCrdb80BZBWUIteKMnLO6u"
 # vector_store_id = _create_vector_store(OPENAI_CLIENT)
 
-assistant = OPENAI_CLIENT.beta.assistants.create(
-    name="HandAI Assistant V2",
-    instructions=create_instructions_for_assistant(),
-    model="gpt-4-turbo",
-    tools=[{"type": "file_search"}],
-    tool_resources={"file_search": {"vector_store_ids": [vector_store_id]}},
-)
+if IS_FEW_SHOT:
+    assistant = OPENAI_CLIENT.beta.assistants.create(
+        name="HandAI Assistant V2 (few shot)",
+        instructions=create_instructions_for_assistant(),
+        model="gpt-4-turbo",
+        tools=[{"type": "file_search"}],
+        tool_resources={"file_search": {"vector_store_ids": [vector_store_id]}},
+    )
+else:
+    assistant = OPENAI_CLIENT.beta.assistants.create(
+        name="HandAI Assistant V2 (zero shot)",
+        model="gpt-4-turbo",
+        tools=[{"type": "file_search"}],
+        tool_resources={"file_search": {"vector_store_ids": [vector_store_id]}},
+    )
 
 print(f"created asssistant with id {assistant.id}")
 
