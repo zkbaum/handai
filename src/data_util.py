@@ -47,9 +47,7 @@ class Reference:
 
 
 def read_references_as_dict(year: int) -> "dict[int, Reference]":
-    path = (
-        f"{ROOT_DIR}/data/references/handai-2013-references/2013-references.csv"
-    )
+    path = f"{ROOT_DIR}/data/references/handai-2013-references/2013-references.csv"
     if year == 2012:
         path = f"{ROOT_DIR}/data/references/handai-2012-references/2012-references.csv"
 
@@ -84,8 +82,7 @@ def read_references_csv(filepath) -> "list[Reference]":
         reference = dic["reference"]
         url = dic["Upload link - drive folder"]
         is_uploaded = (
-            "Yes"
-            == dic["Did you download the PDF and upload to the drive folder?"]
+            "Yes" == dic["Did you download the PDF and upload to the drive folder?"]
         )
         references.append(
             Reference(
@@ -213,9 +210,7 @@ class ExamQuestion:
         )
         if match:
             # Return everything after the "Preferred Response"
-            return match.group(
-                2
-            )  # group(2) refers to the (.*) part of the pattern
+            return match.group(2)  # group(2) refers to the (.*) part of the pattern
         else:
             print(
                 "[WARNING] Preferred response not found in commentary: ",
@@ -418,17 +413,13 @@ class QuestionsBuilder:
         if self.question_content_type == ContentType.TEXT_ONLY:
             questions = [q for q in questions if q.question_has_text_only()]
         elif self.question_content_type == ContentType.TEXT_AND_IMAGES:
-            questions = [
-                q for q in questions if q.question_has_text_and_images()
-            ]
+            questions = [q for q in questions if q.question_has_text_and_images()]
 
         # filter based on content restrictions - commentary
         if self.commentary_content_type == ContentType.TEXT_ONLY:
             questions = [q for q in questions if q.commentary_has_text_only()]
         elif self.commentary_content_type == ContentType.TEXT_AND_IMAGES:
-            questions = [
-                q for q in questions if q.commentary_has_text_and_images()
-            ]
+            questions = [q for q in questions if q.commentary_has_text_and_images()]
 
         # sort by year and question number
         questions.sort(
@@ -441,9 +432,7 @@ class QuestionsBuilder:
         return questions
 
 
-def get_n_examples_from_each_category(
-    exam_questions, n, categories: "list[Category]"
-):
+def get_n_examples_from_each_category(exam_questions, n, categories: "list[Category]"):
     category_ct = {}
     ret = []
     filtered_questions = [q for q in exam_questions if q.category in categories]
@@ -463,9 +452,7 @@ def get_n_examples_from_each_category(
     return ret
 
 
-def get_knn_exemplars(
-    exam_questions: "list[ExamQuestion]", n: int, category: Category
-):
+def get_knn_exemplars(exam_questions: "list[ExamQuestion]", n: int, category: Category):
     filtered_questions = [q for q in exam_questions if q.category == category]
 
     # If we have >= n train examples in this category, just use  the first n.
@@ -478,3 +465,41 @@ def get_knn_exemplars(
     buffer = get_n_examples_from_each_category(exam_questions, 1, catagories)
 
     return filtered_questions + buffer[0 : n - len(filtered_questions)]
+
+
+def attach_references(references_dic, entry):
+    question_num = entry.get_question_number()
+    if question_num in references_dic:
+        documents = references_dic[question_num]
+        for doc in documents:
+            entry.attach_reference(doc)
+        print(
+            f"   attached {len(entry.references)} of {len(documents)} "
+            f"references as documents for question {question_num}"
+        )
+
+
+def prune_questions_without_any_references(
+    exam_questions: "list[ExamQuestion]", year: int
+):
+    """
+    For some retreival experiments, we only want to consider questions that
+    have at least 1 reference available.
+    """
+    references_dic = read_references_as_dict(year)
+
+    # Only consider questions with references
+    print(f"before pruning questions without references: n={len(exam_questions)}")
+    before_set = [x.get_question_number() for x in exam_questions]
+    for entry in exam_questions:
+        attach_references(references_dic, entry)
+    pruned = [
+        x
+        for x in exam_questions
+        if len(x.references) > 0 and not x.question_has_text_and_images()
+    ]
+    print(f"after pruning: n={len(pruned)}")
+    after_set = [x.get_question_number() for x in pruned]
+    print(f"removed {sorted(set(before_set)-set(after_set))}")
+
+    return pruned

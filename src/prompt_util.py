@@ -67,7 +67,11 @@ def get_no_prompt_exemplars():
         ),
     ]
     
-def _create_question_content(exam_question: ExamQuestion, include_reference_text: bool = False):
+def _create_question_content(
+        exam_question: ExamQuestion, 
+        include_reference_text: bool = False, 
+        include_question_tag: bool = False
+):
     content = []
        
     if include_reference_text:
@@ -91,20 +95,24 @@ def _create_question_content(exam_question: ExamQuestion, include_reference_text
             }
         )
 
+    prompt = exam_question.format_question()
+    if include_question_tag:
+        prompt = f'<question>{prompt}</question>'
     content.append(
         {
             "type": "text", 
-            "text": "<question>{}</question>".format(exam_question.format_question())
+            "text": prompt
         }
     )
     
     # For questions with images, also attach the images.
     for media in exam_question.media:
         if media.show_in_question and media.media_type == MediaType.IMAGE:
-            content.append({
-                "type": "text", 
-                "text": f'Figure {media.figure_title}',
-            })
+            if include_question_tag:
+                content.append({
+                    "type": "text", 
+                    "text": f'Figure {media.figure_title}',
+                })
             content.append(
                 {
                     "type": "image_url",
@@ -156,18 +164,23 @@ def create_prompt(
         # Add preamble
         inputs = [
             {
-            "role": "system",
-            "content": preamble
+                "role": "system",
+                "content": preamble
             }
         ]
 
+    is_few_shot = False
     # Add examplars
     if exemplars:
         for exemplar in exemplars:
+            is_few_shot = True
             inputs.append(
                 {
                     "role": "user",
-                    "content": _create_question_content(exemplar)
+                    "content": _create_question_content(
+                        exemplar,
+                        include_question_tag=is_few_shot
+                    )
                 }
             )
             inputs.append(
@@ -181,7 +194,10 @@ def create_prompt(
     inputs.append(
         {
             "role": "user",
-            "content": _create_question_content(exam_question)
+            "content": _create_question_content(
+                exam_question,
+                include_question_tag=is_few_shot
+            )
         }
     )
     

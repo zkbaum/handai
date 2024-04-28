@@ -3,6 +3,12 @@ Retrieval by just using ChatCompletions
 (aka injecting the full text of the reference. Hah)
 """
 
+import os
+import sys
+
+# Hack to import from parent dir
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
 from data_util import (
     read_references_as_dict,
     Category,
@@ -11,6 +17,8 @@ from data_util import (
     ContentType,
     get_n_examples_from_each_category,
     get_knn_exemplars,
+    attach_references,
+    prune_questions_without_any_references,
 )
 from prompt_util import create_prompt, get_no_prompt_exemplars
 from inference_util import (
@@ -93,24 +101,11 @@ IMAGE_TRAIN_SET = (
 )
 
 
-def attach_references(references_dic, entry):
-    question_num = entry.get_question_number()
-    if question_num in references_dic:
-        documents = references_dic[question_num]
-        for doc in documents:
-            entry.attach_reference(doc)
-        print(
-            f"   attached {len(entry.references)} of {len(documents)} references as documents for question {question_num}"
-        )
-
-
 train_references_dic = read_references_as_dict(2012)
 
 
 def get_exemplars(train_set):
-    exemplars = get_n_examples_from_each_category(
-        train_set, 1, [c for c in Category]
-    )
+    exemplars = get_n_examples_from_each_category(train_set, 1, [c for c in Category])
     for x in exemplars:
         attach_references(train_references_dic, x)
     # old_exemplar_nums = [x.get_question_number() for x in exemplars]
@@ -151,25 +146,12 @@ def _run_inference_with_configs(
         .question_content_type(ContentType.TEXT_ONLY)
         .build()
     )
-    eval_references_dic = read_references_as_dict(2013)
 
     i = 0
     results = []
 
     # for rag, only consider text questions with references
-    print(f"before pruning questions without references: n={len(eval_set)}")
-    before_set = [x.get_question_number() for x in eval_set]
-    for entry in eval_set:
-        attach_references(eval_references_dic, entry)
-    eval_set = [
-        x
-        for x in eval_set
-        if len(x.references) > 0 and not x.question_has_text_and_images()
-    ]
-    print(f"after pruning: n={len(eval_set)}")
-    after_set = [x.get_question_number() for x in eval_set]
-    print(f"removed {set(before_set)-set(after_set)}")
-    # removed {97, 130, 45, 80, 83, 62, 191}
+    eval_set = prune_questions_without_any_references(eval_set, test_year)
 
     # eval_set = [x for x in eval_set if x.get_question_number()==40]
     # eval_set = eval_set[0:5]
@@ -201,9 +183,7 @@ def _run_inference_with_configs(
         responses = []
         for n in range(ENSEMBLING_COUNT):
             print(f"   doing ensembling query {n} of {ENSEMBLING_COUNT}")
-            response = _run_inference(
-                client, selected_model, prompt, parsing_fn
-            )
+            response = _run_inference(client, selected_model, prompt, parsing_fn)
             responses.append(response)
 
         results.append(

@@ -16,6 +16,7 @@ from data_util import (
     ContentType,
     get_n_examples_from_each_category,
     get_knn_exemplars,
+    prune_questions_without_any_references,
 )
 from inference_util import (
     Model,
@@ -125,7 +126,12 @@ EVAL_SET = (
     QuestionsBuilder()
     .year(2013)
     .question_content_type(ContentType.TEXT_ONLY)
-    .commentary_content_type(ContentType.TEXT_ONLY)
+    # okay we shouldn't care about commentary type, but I accidentally
+    # forgot to comment it out.
+    # Btw, questions 45, 80, 191 are missing from the references list...so
+    # so these are also skipped unfortunately. We can probably live with
+    # this.
+    # .commentary_content_type(ContentType.TEXT_ONLY)
     .build()
 )
 
@@ -143,6 +149,8 @@ ENSEMBLING_COUNT = 1
 
 results = []
 i = 0
+
+prune_questions_without_any_references(EVAL_SET, 2013)
 
 for entry in EVAL_SET:
     question_num = str(entry.get_question_number())

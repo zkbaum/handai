@@ -11,6 +11,7 @@ class Experiment(Enum):
     ZERO_SHOT_GPT3_5 = "zero-shot-gpt3.5"
     ZERO_SHOT_GPT4 = "zero-shot-gpt4"
     FEW_SHOT_GPT4 = "few-shot-gpt4"
+    RAG_ZERO_SHOT = "rag-zero-shot"
     RAG_FEW_SHOT = "rag-few-shot"
 
 
@@ -19,10 +20,12 @@ def _determine_majority_or_tie(row):
     Determines the most frequent answer, or "TIE" if there's a tie.
     """
     modes = row.mode()
-    if len(modes) > 1:  # More than one mode indicates a tie
+    if modes.empty:  # Check if the modes Series is empty
+        return None  # Return None or some default value if no mode exists
+    elif len(modes) > 1:  # More than one mode indicates a tie
         return "TIE"
     else:
-        return modes[0]
+        return modes.iloc[0]  # Use .iloc for safe access by index position
 
 
 def _check_unanimity(row):
@@ -91,7 +94,7 @@ for exp in list(Experiment):
     filepath = get_result_csvpath_for_experiment(exp)
     df = pd.read_csv(filepath)
     # If you only ran it one time.
-    # if exp == Experiment.RAG_FEW_SHOT:
+    # if exp == Experiment.RAG_ZERO_SHOT:
     #     df["chatgpt_answer_1"] = df["chatgpt_answer_0"]
     #     df["chatgpt_answer_2"] = df["chatgpt_answer_0"]
     df = _parse_inference_results_df(df)

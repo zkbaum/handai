@@ -98,7 +98,6 @@ def _run_inference_with_configs(
     print(f"--- Beginning experiment {exp_name} for year {test_year} ---")
     eval_set = QuestionsBuilder().year(test_year).build()
 
-    # eval_set = eval_set[0:2]
     i = 0
     results = []
     for entry in eval_set:
@@ -119,7 +118,7 @@ def _run_inference_with_configs(
 
         responses = []
         for n in range(ENSEMBLING_COUNT):
-            print(f"   doing ensembling query {n} of {ENSEMBLING_COUNT}")
+            print(f" doing ensembling query {n} of {ENSEMBLING_COUNT}")
             response = _run_inference(CLIENT, model, prompt, parsing_fn)
             # print(f"[debug] got response: {response}")
             responses.append(response)
@@ -160,12 +159,12 @@ for year in [2013]:
         parsing_fn=use_chatgpt_to_extract_answer,
         exp_name="gpt4_zero_shot",
     )
-    # GPT4 few shot
-    _run_inference_with_configs(
-        test_year=year,
-        model=Model.GPT4,
-        preamble=PREAMBLE_DETAILED,
-        exemplars=TEXT_EXEMPLARS,
-        parsing_fn=use_regex_to_extract_answer,
-        exp_name="gpt4_few_shot",
-    )
+    # # GPT4 few shot
+    # _run_inference_with_configs(
+    #     test_year=year,
+    #     model=Model.GPT4,
+    #     preamble=PREAMBLE_DETAILED,
+    #     exemplars=TEXT_EXEMPLARS,
+    #     parsing_fn=use_regex_to_extract_answer,
+    #     exp_name="gpt4_few_shot",
+    # )
