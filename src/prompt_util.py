@@ -198,13 +198,13 @@ def create_prompt(
 
 def create_instructions_for_assistant():
     train_set = (QuestionsBuilder()
-                  .year(2012)
+                  .year(2008)
                   .question_content_type(ContentType.TEXT_ONLY)
                   .commentary_content_type(ContentType.TEXT_ONLY)
                   .build())
 
     exemplar_text = ''
-    exemplars = get_n_examples_from_each_category(train_set, 2, [c for c in Category])
+    exemplars = get_n_examples_from_each_category(train_set, 1, list(Category))
     for ex in exemplars:
         as_txt = f"""<question>{ex.format_question()}</question>
         
@@ -216,12 +216,20 @@ def create_instructions_for_assistant():
         exemplar_text += as_txt
 
 
-    instructions = f"""
-You are a board certified hand surgeon. You are taking a multiple choice exam to test your hand surgery knowledge. You will be presented with a question and a few possible answer choices.
+    instructions = f"""You are a board certified hand surgeon. \
+You are taking a multiple choice exam to test your hand surgery knowledge. \
+You will be presented with a question and a few possible answer choices. 
 
-First, search through your knowledge base to find information about the question. Then, inside <discussion></discussion> tags, discuss each option in LESS THAN 2 SENTENCES PER OPTION and decide on the best answer choice. Finally, decide on the correct answer (citing sources from the knowledge base) and write the final answer inside <answer></answer> tags. Even if you are unsure, please pick one letter you are most confident about.
+First, search through your knowledge base to find information about the \
+question. Then, inside <discussion></discussion> tags, briefly discuss \
+each option. Finally, decide on the correct answer (citing sources from \
+the knowledge base) and write the final answer inside <answer></answer> \
+tags. Even if you are unsure, please pick one letter you are most \
+confident about.
 
-Please make sure to search every file in your knowledge base. If you cannot find the information in the knowledge base, fall back to your general medical knowledge. Here are examples of the desired output.
+Please make sure to search every file in your knowledge base. \
+If you cannot find the information in the knowledge base, fall back to your \
+general medical knowledge. Here are examples of the desired output.
 
 {exemplar_text}
 """

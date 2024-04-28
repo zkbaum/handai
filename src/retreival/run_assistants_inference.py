@@ -2,6 +2,12 @@
 Retreival using the assistants API.
 """
 
+import os
+import sys
+
+# Hack to import from parent dir
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
 from data_util import (
     Category,
     read_references_csv,
@@ -21,6 +27,7 @@ from inference_util import (
     write_inference_csv,
     InferenceResult,
 )
+from private import ROOT_DIR
 from openai import OpenAI
 import time
 
@@ -44,7 +51,10 @@ client = OpenAI()
 
 # print(assistants.metadata)
 super_assistant = client.beta.assistants.retrieve(
-    "asst_hcPA7VzvVgw5H8xdEdsQliGx"
+    # This is the v1 assistant where I combined everything into a few pdfs.
+    # "asst_hcPA7VzvVgw5H8xdEdsQliGx"
+    # This is the v2 assistant where I used a vector store of ~300 files.
+    "asst_JqyeCJIXrbsrqLQ6F7W7hsWV"
 )
 # eval_questions = assistant.metadata['questions_selected'].split(',')
 # eval_questions = [int(x) for x in eval_questions]
@@ -57,8 +67,10 @@ eval_set = (
 )
 # eval_set = [x for x in eval_set if str(x.get_question_number()) in question_num_to_assistant]
 
-# references_list = read_references_csv(f'{ROOT_DIR}/data/references/handai-2013-references/2013-references.csv')
-references_list = []
+references_list = read_references_csv(
+    f"{ROOT_DIR}/data/references/handai-2013-references/2013-references.csv"
+)
+# references_list = []
 
 
 def query_assistant(client, assistant, exam_question: ExamQuestion):
@@ -79,9 +91,7 @@ def query_assistant(client, assistant, exam_question: ExamQuestion):
 
     while run.status in ["queued", "in_progress", "cancelling"]:
         time.sleep(1)  # Wait for 1 second
-        run = client.beta.threads.runs.retrieve(
-            thread_id=thread.id, run_id=run.id
-        )
+        run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
 
     if run.status == "completed":
         messages = client.beta.threads.messages.list(thread_id=thread.id)
@@ -148,7 +158,7 @@ def _run_assistant_inference(client, assistant, entry):
 results = []
 i = 0
 MAX_RETRIES = 3
-ENSEMBLING_COUNT = 3
+ENSEMBLING_COUNT = 1
 
 for entry in eval_set:
     question_num = str(entry.get_question_number())
@@ -186,5 +196,5 @@ write_inference_csv(
     results,
     references_list=references_list,
     year=2013,
-    exp_name="rag-big-assistant",
+    exp_name="assistants-v2",
 )
