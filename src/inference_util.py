@@ -198,6 +198,7 @@ def write_inference_csv(
         header = [
             "question_year",
             "question_number",
+            "question_id",
             "category",
             "question",
             "prompt",
@@ -221,6 +222,7 @@ def write_inference_csv(
             row = [
                 result.question.get_year(),
                 result.question.get_question_number(),
+                result.question.question_id,
                 result.question.category,
                 result.question.format_question(),
                 # unclear why this stops showing up in google doc...perhaps it won't show above a certain limit
