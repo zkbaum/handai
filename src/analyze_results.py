@@ -9,11 +9,12 @@ import csv
 
 
 class Experiment(Enum):
+    HUMAN_CONTROL = "human"
     ZERO_SHOT_GPT3_5 = "zero-shot-gpt3.5"
     ZERO_SHOT_GPT4 = "zero-shot-gpt4"
     FEW_SHOT_GPT4 = "few-shot-gpt4"
-    RAG_ZERO_SHOT = "rag-zero-shot"
-    RAG_FEW_SHOT = "rag-few-shot"
+    FILE_SEARCH_ZERO_SHOT = "rag-zero-shot"
+    FILE_SEARCH_FEW_SHOT = "rag-few-shot"
 
 
 def _determine_majority_or_tie(row):

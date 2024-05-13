@@ -375,21 +375,31 @@ class ContentType(Enum):
 
 
 class QuestionsBuilder:
-    question_id: str
-    year: Optional[int]
-    question_content_type: Optional[ContentType]
-    commentary_content_type: Optional[ContentType]
+    # _year: Optional[int]
+    # _question_content_type: Optional[ContentType]
+    # _commentary_content_type: Optional[ContentType]
+    # _keep_video: Optional[bool]
+
+    def __init__(self):
+        self._year = None
+        self._question_content_type = None
+        self._commentary_content_type = None
+        self._keep_video = None
 
     def year(self, year: int):
-        self.year = year
+        self._year = year
         return self
 
     def question_content_type(self, question_content_type: ContentType):
-        self.question_content_type = question_content_type
+        self._question_content_type = question_content_type
         return self
 
     def commentary_content_type(self, commentary_content_type: ContentType):
-        self.commentary_content_type = commentary_content_type
+        self._commentary_content_type = commentary_content_type
+        return self
+
+    def keep_video(self, keep_video: bool):
+        self._keep_video = keep_video
         return self
 
     def build(self) -> "list[ExamQuestion]":
@@ -398,27 +408,20 @@ class QuestionsBuilder:
             f"{ROOT_DIR}/data/assh-data/questions.csv", media
         )
 
-        # filter out any questions with videos
-        questions = [
-            q
-            for q in questions
-            if len([m for m in q.media if m.media_type == MediaType.VIDEO]) == 0
-        ]
-
         # filter out based on year
-        if self.year:
-            questions = [q for q in questions if q.get_year() == self.year]
+        if self._year:
+            questions = [q for q in questions if q.get_year() == self._year]
 
         # filter based on content restrictions - question
-        if self.question_content_type == ContentType.TEXT_ONLY:
+        if self._question_content_type == ContentType.TEXT_ONLY:
             questions = [q for q in questions if q.question_has_text_only()]
-        elif self.question_content_type == ContentType.TEXT_AND_IMAGES:
+        elif self._question_content_type == ContentType.TEXT_AND_IMAGES:
             questions = [q for q in questions if q.question_has_text_and_images()]
 
         # filter based on content restrictions - commentary
-        if self.commentary_content_type == ContentType.TEXT_ONLY:
+        if self._commentary_content_type == ContentType.TEXT_ONLY:
             questions = [q for q in questions if q.commentary_has_text_only()]
-        elif self.commentary_content_type == ContentType.TEXT_AND_IMAGES:
+        elif self._commentary_content_type == ContentType.TEXT_AND_IMAGES:
             questions = [q for q in questions if q.commentary_has_text_and_images()]
 
         # sort by year and question number
@@ -428,6 +431,19 @@ class QuestionsBuilder:
                 question.get_question_number(),
             )
         )
+
+        # filter out any questions with videos
+        if not self._keep_video:
+            before_ids = set([q.get_question_number() for q in questions])
+            print(f"len before: {len(before_ids)}")
+            questions = [
+                q
+                for q in questions
+                if len([m for m in q.media if m.media_type == MediaType.VIDEO]) == 0
+            ]
+            after_ids = set([q.get_question_number() for q in questions])
+            print(f"len after: {len(after_ids)}")
+            print(f"filtered out {sorted(before_ids - after_ids)}")
 
         return questions
 

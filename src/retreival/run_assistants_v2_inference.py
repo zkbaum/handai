@@ -145,12 +145,13 @@ MAX_ATTEMPTS_PER_REQUEST = 3
 # Given that ChatGPT is not deterministic, we may want to ask the same
 # question multiple times. For example, if this is 5, then we will ask
 # each question 5 times.
-ENSEMBLING_COUNT = 1
+ENSEMBLING_COUNT = 3
 
 results = []
 i = 0
 
-prune_questions_without_any_references(EVAL_SET, 2013)
+# We will not prune in our final analysis to make the evals easier to explain.
+# prune_questions_without_any_references(EVAL_SET, 2013)
 
 for entry in EVAL_SET:
     question_num = str(entry.get_question_number())
