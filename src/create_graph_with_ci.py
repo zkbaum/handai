@@ -11,8 +11,14 @@ from private import get_stats_csv_rootdir
 
 # Load datasets
 ROOT_DIR = get_stats_csv_rootdir()
+
+# CSV in the form [question_id, correct_answer, question_type]
 key_df = pd.read_csv(f"{ROOT_DIR}/key.csv")
+
+# CSV in the form [student_id, answer1, answer2, ..., answer200]
 human_df = pd.read_csv(f"{ROOT_DIR}/human.csv")
+
+# CSV in the form [question_id, attempt0, attempt1, attempt2]
 gpt_3_5_df = pd.read_csv(f"{ROOT_DIR}/gpt3-5.csv")
 gpt4_df = pd.read_csv(f"{ROOT_DIR}/gpt4.csv")
 gpt4_fewshot_df = pd.read_csv(f"{ROOT_DIR}/gpt4-fewshot.csv")
