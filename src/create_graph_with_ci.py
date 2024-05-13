@@ -15,7 +15,7 @@ key_df = pd.read_csv(f"{ROOT_DIR}/key.csv")
 human_df = pd.read_csv(f"{ROOT_DIR}/human.csv")
 gpt_3_5_df = pd.read_csv(f"{ROOT_DIR}/gpt3-5.csv")
 gpt4_df = pd.read_csv(f"{ROOT_DIR}/gpt4.csv")
-gpt4_fewshot_df = pd.read_csv(f"{ROOT_DIR}/gpt4-few-shot.csv")
+gpt4_fewshot_df = pd.read_csv(f"{ROOT_DIR}/gpt4-fewshot.csv")
 gpt4_filesearch_df = pd.read_csv(f"{ROOT_DIR}/gpt4-filesearch.csv")
 
 
@@ -53,7 +53,11 @@ def _calculate_chatgpt_accuracy_and_ci(answers_df, key_df):
             results[q_type].extend(
                 [
                     1 if row[attempt] == correct_answer else 0
-                    for attempt in ["attempt0", "attempt1", "attempt2"]
+                    for attempt in [
+                        "attempt0",
+                        "attempt1",
+                        "attempt2",
+                    ]
                 ]
             )
     accuracy = {q_type: np.mean(results[q_type]) for q_type in results}
@@ -144,12 +148,15 @@ ax.set_xticklabels(labels)
 ax.legend()
 
 
-def autolabel(rects, ci):
+def _autolabel(rects, ci):
+    """
+    Add text labels for accuracy and ci (to be included above error bars)
+    """
     for rect, c in zip(rects, ci):
         height = rect.get_height()
         if height != 0:
             vertical_offset = 0
-            if c > 0.02:
+            if c > 0.015:
                 vertical_offset += 15
             if c > 0.05:
                 vertical_offset += 15
@@ -173,8 +180,8 @@ def autolabel(rects, ci):
             )
 
 
-autolabel(rects1, text_ci)
-autolabel(rects2, image_ci)
+_autolabel(rects1, text_ci)
+_autolabel(rects2, image_ci)
 
 plt.tight_layout()
 plt.show()
