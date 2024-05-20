@@ -12,7 +12,8 @@ class Experiment(Enum):
     HUMAN_CONTROL = "human"
     ZERO_SHOT_GPT3_5 = "zero-shot-gpt3.5"
     ZERO_SHOT_GPT4 = "zero-shot-gpt4"
-    FEW_SHOT_GPT4 = "few-shot-gpt4"
+    ZERO_SHOT_GPT4O = "zero-shot-gpt4o"
+    FEW_SHOT_GPT4O = "few-shot-gpt4o"
     FILE_SEARCH_ZERO_SHOT = "rag-zero-shot"
     FILE_SEARCH_FEW_SHOT = "rag-few-shot"
 
@@ -96,12 +97,14 @@ def _parse_inference_results_df(df):
 def _compute_averages():
     dfs = []
     for exp in list(Experiment):
+        if exp == Experiment.HUMAN_CONTROL:
+            continue
         filepath = get_result_csvpath_for_experiment(exp)
         df = pd.read_csv(filepath)
         # If you only ran it one time.
-        # if exp == Experiment.RAG_ZERO_SHOT:
-        #     df["chatgpt_answer_1"] = df["chatgpt_answer_0"]
-        #     df["chatgpt_answer_2"] = df["chatgpt_answer_0"]
+        # if exp == Experiment.ZERO_SHOT_GPT4O:
+        df["chatgpt_answer_1"] = df["chatgpt_answer_0"]
+        df["chatgpt_answer_2"] = df["chatgpt_answer_0"]
         df = _parse_inference_results_df(df)
         df["experiment_name"] = exp.value
         dfs.append(df)
@@ -214,11 +217,11 @@ def _write_list_to_csv(results, filename):
 averages_df = _compute_averages()
 _write_df_to_csv(averages_df, "average-stats.csv")
 
-averages_per_attempt_df = _compute_averages_per_attempt(slice_by_question_type=True)
-_write_list_to_csv(averages_per_attempt_df, "per-attempt-stats-by-question-type.csv")
+# averages_per_attempt_df = _compute_averages_per_attempt(slice_by_question_type=True)
+# _write_list_to_csv(averages_per_attempt_df, "per-attempt-stats-by-question-type.csv")
 
-averages_per_attempt_df = _compute_averages_per_attempt(slice_by_question_type=False)
-_write_list_to_csv(averages_per_attempt_df, "per-attempt-stats.csv")
+# averages_per_attempt_df = _compute_averages_per_attempt(slice_by_question_type=False)
+# _write_list_to_csv(averages_per_attempt_df, "per-attempt-stats.csv")
 
 # For some reason (likely because of the circular imports), this module gets
 # executed twice. So we manually add an exit.

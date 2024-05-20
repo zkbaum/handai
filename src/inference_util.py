@@ -10,7 +10,8 @@ from dataclasses import dataclass
 import csv
 from private import (
     ROOT_DIR,
-    EXEMPLARS_FOR_EXTRACTOR,
+    EXEMPLARS_FOR_GPT3_EXTRACTOR,
+    EXEMPLARS_FOR_GPT4_EXTRACTOR,
     ASSISTANTS_EXEMPLARS_FOR_EXTRACTOR,
     get_file_id_to_reference_mappings_2013,
 )
@@ -26,12 +27,14 @@ class Model(Enum):
     FtFeb11NoExemplars = auto()
     FtFeb11WithExamplars = auto()
     GPT4_VISION = auto()
+    GPT4O = auto()
 
 
 def get_model_string(model: Model):
     model_enum_to_str = {
         Model.GPT3_5: "gpt-3.5-turbo-0125",
         Model.GPT4: "gpt-4-turbo-2024-04-09",
+        Model.GPT4O: "gpt-4o",
         # GPT4_VISION is no longer needed now that gpt-4-turbo support vision.
         # Model.GPT4_VISION: "gpt-4-vision-preview",
         Model.FtFeb11NoExemplars: "ft:gpt-3.5-turbo-1106:personal::8qxFN6cX",
@@ -120,31 +123,34 @@ def parse_response_string(txt: str):
         return "PARSE_ERROR", "PARSE_ERROR"
 
 
-def use_regex_to_extract_answer_textinput(client, exam_question, txt):
+def use_regex_to_extract_answer_chatcompletion(client, model, exam_question, response):
     """
     Parses the few-shot response using regex.
-    Note 'client' is unused...this is a hack because the zero shot
-    requires client and I wanted the abstraction to work :)
+    Note 'client' and `model` are unused...this is a hack because the zero shot
+    requires these and I wanted the abstraction to work :)
     """
-    discussion, answer = parse_response_string(txt)
-    print(f"   used regex to extract answer {answer}")
-    return discussion, answer
-
-
-def use_regex_to_extract_answer(client, response):
-    """
-    Parses the few-shot response using regex.
-    Note 'client' is unused...this is a hack because the zero shot
-    requires client and I wanted the abstraction to work :)
-    """
-
     # TODO(ZKBAUM) clean this up. this happens when there was a fatal
     # inference error, so you should plumb that instead
     if response is None:
         return "PARSE_ERROR", "PARSE_ERROR"
 
     txt = response.choices[0].message.content
-    return use_regex_to_extract_answer_textinput(None, None, txt)
+
+    discussion, answer = parse_response_string(txt)
+    print(f"   used regex to extract answer {answer}")
+    return discussion, answer
+
+
+def use_regex_to_extract_answer_assistants(client, exam_question, txt):
+    """
+    Parses the few-shot response using regex.
+    Note 'client' is unused...this is a hack because the zero shot
+    requires client and I wanted the abstraction to work :)
+    """
+
+    discussion, answer = parse_response_string(txt)
+    print(f"   used regex to extract answer {answer}")
+    return discussion, answer
 
 
 def _replace_citations(raw_discussion, citations, file_id_mapping):
@@ -173,9 +179,12 @@ def write_inference_csv(
     references_list: "list[Reference]" = [],
     year: int = 0,
     exp_name: str = "",
-):
+) -> str:
     """
     Writes inference results to $ROOT_DIR/out/inference
+
+    Returns:
+        results file written to
     """
     current_timestamp = datetime.now()
     formatted_timestamp = current_timestamp.strftime("%Y%m%d_%H:%M:%S")
@@ -247,26 +256,64 @@ def write_inference_csv(
             writer.writerow(row)
 
     print(f"Data has been written to {filepath}")
+    return filepath
 
 
-def use_chatgpt_to_extract_answer_textinput(client, original_response):
+def use_chatgpt_to_extract_answer(
+    client,
+    model,
+    exam_question: ExamQuestion,
+    original_response,
+):
+    """
+    In the zero-shot approach, ChatGPT gives inconsistent output formatting.
+    Therefore, we will use a seperate model to extract the answer.
+    """
+    print("   got zero-shot response, extracting answer...")
+    if original_response:
+        original_response = original_response.choices[0].message.content
+
     extractor_prompt = [
         {
             "role": "system",
-            "content": 'You are analyzing ChatGPT responses to multiple choice questions. Your task is to extract ChatGPT\'s final answer. \n\nIf you can identify ChatGPT\'s answer, respond with just that letter. For example, "A", "B", etc.\n\nIf you cannot identify the answer, respond with "N/A". \n',
+            "content": [
+                {
+                    "text": 'You are analyzing ChatGPT responses to multiple choice questions. Your task is to extract ChatGPT\'s final answer. \n\nIf you can identify ChatGPT\'s final answer, reply with just that letter inside finalAnswer tags. For example, "<finalAnswer>C</finalAnswer>".\n\n If you cannot identify the answer, reply with "<finalAnswer>N/A</finalAnswer>" ',
+                    "type": "text",
+                }
+            ],
+        },
+    ]
+    if model == Model.GPT3_5:
+        extractor_prompt += EXEMPLARS_FOR_GPT3_EXTRACTOR
+    elif model == Model.GPT4 or model == Model.GPT4O:
+        extractor_prompt += EXEMPLARS_FOR_GPT4_EXTRACTOR
+    else:
+        print(f"Extracting with chatgpt for model {model} is not supported")
+    extractor_prompt += [
+        {
+            "role": "user",
+            "content": f"""<question>{exam_question.format_question()}</question> 
+<response>{original_response}</response>""",
         }
     ]
-    extractor_prompt += EXEMPLARS_FOR_EXTRACTOR
-    extractor_prompt += [{"role": "user", "content": f"{original_response}"}]
 
     # print(extractor_prompt)
     response = client.chat.completions.create(
-        model="gpt-4-turbo",
+        model="gpt-4o",
+        # model="gpt-4-turbo",
         # model="gpt-3.5-turbo",
         messages=extractor_prompt,
         max_tokens=256,
     )
-    extracted_answer = response.choices[0].message.content
+    response = response.choices[0].message.content
+
+    pattern = r"<finalAnswer>(.*?)<\/finalAnswer>"
+    match = re.search(pattern, response, re.DOTALL)
+    extracted_answer = "PARSE_ERROR"
+    if match:
+        extracted_answer = match.group(1)
+
     print(f"   used chatgpt to extract answer {extracted_answer}")
 
     return original_response, extracted_answer
@@ -292,7 +339,8 @@ def use_chatgpt_to_extract_answer_textinput_assistants(
 
     # print(extractor_prompt)
     response = client.chat.completions.create(
-        model="gpt-4-turbo",
+        model="gpt-4o",
+        # model="gpt-4-turbo",
         # model="gpt-3.5-turbo",
         messages=extractor_prompt,
         max_tokens=256,
@@ -309,13 +357,3 @@ def use_chatgpt_to_extract_answer_textinput_assistants(
     print(f"   used chatgpt to extract answer {extracted_answer}")
 
     return original_response, extracted_answer
-
-
-def use_chatgpt_to_extract_answer(client, original_response):
-    """
-    In the zero-shot approach, ChatGPT gives inconsistent output formatting.
-    Therefore, we will use a seperate model to extract the answer.
-    """
-    print("   got zero-shot response, extracting answer...")
-    original_response = original_response.choices[0].message.content
-    return use_chatgpt_to_extract_answer_textinput(client, original_response)

@@ -21,7 +21,7 @@ from data_util import (
 from inference_util import (
     Model,
     HandGPTResponse,
-    use_regex_to_extract_answer_textinput,
+    use_regex_to_extract_answer_assistants,
     use_chatgpt_to_extract_answer_textinput_assistants,
     write_inference_csv,
     InferenceResult,
@@ -78,7 +78,7 @@ def _run_assistant_inference(client, assistant, exam_question, is_few_shot):
         additional_instructions = """Please make sure the response is in the \
 form <discussion>insert discussion</discussion> <answer>C</answer>. Even if \
 you are unsure, please pick one letter you are most confident about."""
-        parsing_fn = use_regex_to_extract_answer_textinput
+        parsing_fn = use_regex_to_extract_answer_assistants
 
     messages = _query_assistant(client, assistant, prompt, additional_instructions)
 
@@ -110,7 +110,7 @@ you are unsure, please pick one letter you are most confident about."""
 
 OPENAI_CLIENT = OpenAI()
 
-IS_FEW_SHOT = False
+IS_FEW_SHOT = True
 if IS_FEW_SHOT:
     print("Experiment: few shot")
 else:
@@ -145,13 +145,14 @@ MAX_ATTEMPTS_PER_REQUEST = 3
 # Given that ChatGPT is not deterministic, we may want to ask the same
 # question multiple times. For example, if this is 5, then we will ask
 # each question 5 times.
-ENSEMBLING_COUNT = 3
+ENSEMBLING_COUNT = 1
 
 results = []
 i = 0
 
 # We will not prune in our final analysis to make the evals easier to explain.
 # prune_questions_without_any_references(EVAL_SET, 2013)
+
 
 for entry in EVAL_SET:
     question_num = str(entry.get_question_number())
@@ -174,7 +175,7 @@ for entry in EVAL_SET:
             question=entry,
             prompt="""N/A - assistants""",
             question_type=entry.get_question_content_type(),
-            model=Model.GPT4,
+            model=Model.GPT4O,
             responses=responses,
         )
     )
@@ -184,5 +185,5 @@ write_inference_csv(
     results,
     references_list=REFERENCES_LIST,
     year=2013,
-    exp_name="assistants-v2-zero-shot",
+    exp_name="gpt4o-assistants-v2-zero-shot",
 )

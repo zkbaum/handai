@@ -434,16 +434,16 @@ class QuestionsBuilder:
 
         # filter out any questions with videos
         if not self._keep_video:
-            before_ids = set([q.get_question_number() for q in questions])
-            print(f"len before: {len(before_ids)}")
+            # before_ids = set([q.get_question_number() for q in questions])
+            # print(f"len before: {len(before_ids)}")
             questions = [
                 q
                 for q in questions
                 if len([m for m in q.media if m.media_type == MediaType.VIDEO]) == 0
             ]
-            after_ids = set([q.get_question_number() for q in questions])
-            print(f"len after: {len(after_ids)}")
-            print(f"filtered out {sorted(before_ids - after_ids)}")
+            # after_ids = set([q.get_question_number() for q in questions])
+            # print(f"len after: {len(after_ids)}")
+            # print(f"filtered out {sorted(before_ids - after_ids)}")
 
         return questions
 

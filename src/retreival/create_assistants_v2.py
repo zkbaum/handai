@@ -61,14 +61,14 @@ if IS_FEW_SHOT:
     assistant = OPENAI_CLIENT.beta.assistants.create(
         name="HandAI Assistant V2 (few shot)",
         instructions=create_instructions_for_assistant(),
-        model="gpt-4-turbo",
+        model="gpt-4o",
         tools=[{"type": "file_search"}],
         tool_resources={"file_search": {"vector_store_ids": [vector_store_id]}},
     )
 else:
     assistant = OPENAI_CLIENT.beta.assistants.create(
         name="HandAI Assistant V2 (zero shot)",
-        model="gpt-4-turbo",
+        model="gpt-4o",
         tools=[{"type": "file_search"}],
         tool_resources={"file_search": {"vector_store_ids": [vector_store_id]}},
     )
