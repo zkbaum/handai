@@ -15,6 +15,7 @@ from private import (
     ASSISTANTS_EXEMPLARS_FOR_EXTRACTOR,
     get_file_id_to_reference_mappings_2013,
 )
+from openai import RateLimitError
 
 
 # A few notes about models
@@ -298,14 +299,23 @@ def use_chatgpt_to_extract_answer(
         }
     ]
 
-    response = client.chat.completions.create(
-        # for some reason, gpt-4-turbo seems to be better at extraction than gpt-4o.
-        # therefore, we will use gpt-4-turbo for extraction.
-        model="gpt-4-turbo",
-        # model="gpt-3.5-turbo",
-        messages=extractor_prompt,
-        max_tokens=256,
-    )
+    try:
+        response = client.chat.completions.create(
+            # for some reason, gpt-4-turbo seems to be better at extraction than gpt-4o.
+            # therefore, we will use gpt-4-turbo for extraction.
+            model="gpt-4-turbo",
+            # model="gpt-3.5-turbo",
+            messages=extractor_prompt,
+            max_tokens=256,
+        )
+    except RateLimitError as e:
+        print(f"[ERROR] Got RateLimitError with extraction: {e}")
+        return original_response, "EXTRACTION_ERROR_RATELIMIT"
+    except Exception as e:
+        print(f"[ERROR] Got error with extraction: {e}")
+        # print("[INFO] prompt used: {}".format(prompt))
+        return original_response, "EXTRACTION_ERROR"
+
     response = response.choices[0].message.content
 
     pattern = r"<finalAnswer>(.*?)<\/finalAnswer>"
@@ -338,13 +348,21 @@ def use_chatgpt_to_extract_answer_textinput_assistants(
     ]
 
     # print(extractor_prompt)
-    response = client.chat.completions.create(
-        # model="gpt-4o",
-        model="gpt-4-turbo",
-        # model="gpt-3.5-turbo",
-        messages=extractor_prompt,
-        max_tokens=256,
-    )
+    try:
+        response = client.chat.completions.create(
+            # model="gpt-4o",
+            model="gpt-4-turbo",
+            # model="gpt-3.5-turbo",
+            messages=extractor_prompt,
+            max_tokens=256,
+        )
+    except RateLimitError as e:
+        print(f"[ERROR] Got RateLimitError with extraction: {e}")
+        return original_response, "EXTRACTION_ERROR_RATELIMIT"
+    except Exception as e:
+        print(f"[ERROR] Got error with extraction: {e}")
+        # print("[INFO] prompt used: {}".format(prompt))
+        return original_response, "EXTRACTION_ERROR"
     response = response.choices[0].message.content
 
     # print(response)

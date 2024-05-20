@@ -95,15 +95,17 @@ you are unsure, please pick one letter you are most confident about."""
         )
 
     # chatgpt_discussion, chatgpt_answer = parsing_fn(client, response)
+    txt = ""
+    if messages:
+        txt = messages.data[0].content[0].text.value
 
-    txt = messages.data[0].content[0].text.value
     chatgpt_discussion, chatgpt_answer = parsing_fn(client, exam_question, txt)
 
     response = HandGPTResponse(
         raw_response=messages,
         discussion=chatgpt_discussion,
         answer=chatgpt_answer,
-        citations=messages.data[0].content[0].text.annotations,
+        citations=messages.data[0].content[0].text.annotations if messages else None,
     )
     return response
 
@@ -123,8 +125,6 @@ EVAL_SET = (
     .build()
 )
 
-EVAL_SET = EVAL_SET[0:2]
-
 REFERENCES_LIST = read_references_csv(
     f"{ROOT_DIR}/data/references/handai-2013-references/2013-references.csv"
 )
@@ -135,7 +135,7 @@ MAX_ATTEMPTS_PER_REQUEST = 3
 # Given that ChatGPT is not deterministic, we may want to ask the same
 # question multiple times. For example, if this is 5, then we will ask
 # each question 5 times.
-ENSEMBLING_COUNT = 1
+ENSEMBLING_COUNT = 10
 
 
 
@@ -173,6 +173,14 @@ def _run_assistant_inference_with_config(is_few_shot: bool):
             response = _run_assistant_inference(
                 OPENAI_CLIENT, ASSISTANT, entry, is_few_shot=is_few_shot
             )
+            if response.answer == 'EXTRACTION_ERROR_RATELIMIT':
+                print("[GRACEFUL EXIT WARNING] Hit quota limit so ending gracefully")
+                return write_inference_csv(
+                    results,
+                    references_list=REFERENCES_LIST,
+                    year=2013,
+                    exp_name=experiment_name,
+                )
             responses.append(response)
 
         results.append(
@@ -198,6 +206,6 @@ def _run_assistant_inference_with_config(is_few_shot: bool):
 
 paths = []
 paths.append(_run_assistant_inference_with_config(is_few_shot=False))
-paths.append(_run_assistant_inference_with_config(is_few_shot=True))
+# paths.append(_run_assistant_inference_with_config(is_few_shot=True))
 print(f"See output at following paths:\n{"\n".join(paths)}")
 print("done :)")

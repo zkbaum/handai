@@ -39,7 +39,7 @@ MAX_ATTEMPTS_PER_REQUEST = 3
 # Given that ChatGPT is not deterministic, we may want to ask the same
 # question multiple times. For example, if this is 5, then we will ask
 # each question 5 times.
-ENSEMBLING_COUNT = 10
+ENSEMBLING_COUNT = 1
 
 
 def _run_inference(client, entry, selected_model, prompt, parsing_fn):
@@ -61,7 +61,7 @@ def _run_inference(client, entry, selected_model, prompt, parsing_fn):
             "this will count as incorrect answer"
         )
 
-    chatgpt_discussion, chatgpt_answer = parsing_fn(client, selected_model, entry, response)
+    chatgpt_discussion, chatgpt_answer = parsing_fn(client, selected_model, entry, response)        
 
     response = HandGPTResponse(
         raw_response=response,
@@ -123,6 +123,9 @@ def _run_inference_with_configs(
         for n in range(ENSEMBLING_COUNT):
             print(f" doing ensembling query {n} of {ENSEMBLING_COUNT}")
             response = _run_inference(CLIENT, entry, model, prompt, parsing_fn)
+            if response.answer == 'EXTRACTION_ERROR_RATELIMIT':
+                print("[GRACEFUL EXIT WARNING] Hit quota limit so ending gracefully")
+                return write_inference_csv(results, year=test_year, exp_name=exp_name)
             # print(f"[debug] got response: {response}")
             responses.append(response)
 
@@ -147,16 +150,16 @@ def _run_inference_with_configs(
 paths = []
 for year in [2013]:
     # GPT3.5 zero-shot
-    paths.append(
-        _run_inference_with_configs(
-            test_year=year,
-            model=Model.GPT3_5,
-            preamble=None,
-            exemplars=None,
-            parsing_fn=use_chatgpt_to_extract_answer,
-            exp_name="gpt3_zero_shot",
-        )
-    )
+    # paths.append(
+    #     _run_inference_with_configs(
+    #         test_year=year,
+    #         model=Model.GPT3_5,
+    #         preamble=None,
+    #         exemplars=None,
+    #         parsing_fn=use_chatgpt_to_extract_answer,
+    #         exp_name="gpt3_zero_shot",
+    #     )
+    # )
     # GPT4 zero-shot
     paths.append(
         _run_inference_with_configs(
@@ -169,27 +172,27 @@ for year in [2013]:
         )
     )
     # GPT4o zero-shot
-    paths.append(
-        _run_inference_with_configs(
-            test_year=year,
-            model=Model.GPT4O,
-            preamble=None,
-            exemplars=None,
-            parsing_fn=use_chatgpt_to_extract_answer,
-            exp_name="gpt4o_zero_shot",
-        )
-    )
+    # paths.append(
+    #     _run_inference_with_configs(
+    #         test_year=year,
+    #         model=Model.GPT4O,
+    #         preamble=None,
+    #         exemplars=None,
+    #         parsing_fn=use_chatgpt_to_extract_answer,
+    #         exp_name="gpt4o_zero_shot",
+    #     )
+    # )
     # # GPT4 few shot
-    paths.append(
-        _run_inference_with_configs(
-            test_year=year,
-            model=Model.GPT4O,
-            preamble=PREAMBLE_DETAILED,
-            exemplars=TEXT_EXEMPLARS,
-            parsing_fn=use_regex_to_extract_answer_chatcompletion,
-            exp_name="gpt4o_few_shot",
-        )
-    )
+    # paths.append(
+    #     _run_inference_with_configs(
+    #         test_year=year,
+    #         model=Model.GPT4O,
+    #         preamble=PREAMBLE_DETAILED,
+    #         exemplars=TEXT_EXEMPLARS,
+    #         parsing_fn=use_regex_to_extract_answer_chatcompletion,
+    #         exp_name="gpt4o_few_shot",
+    #     )
+    # )
 
 print(f"See output at following paths:\n{"\n".join(paths)}")
 print("done :)")
