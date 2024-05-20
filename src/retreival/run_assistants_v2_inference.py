@@ -110,18 +110,6 @@ you are unsure, please pick one letter you are most confident about."""
 
 OPENAI_CLIENT = OpenAI()
 
-IS_FEW_SHOT = True
-if IS_FEW_SHOT:
-    print("Experiment: few shot")
-else:
-    print("Experiment: zero shot")
-
-# These are the v2 assistants where I used a vector store of ~300 files.
-assistant_id = "asst_zSnXmisZfhznjRdeeBBq7xBA"
-if IS_FEW_SHOT:
-    assistant_id = "asst_JqyeCJIXrbsrqLQ6F7W7hsWV"
-ASSISTANT = OPENAI_CLIENT.beta.assistants.retrieve(assistant_id)
-
 EVAL_SET = (
     QuestionsBuilder()
     .year(2013)
@@ -135,6 +123,8 @@ EVAL_SET = (
     .build()
 )
 
+EVAL_SET = EVAL_SET[0:2]
+
 REFERENCES_LIST = read_references_csv(
     f"{ROOT_DIR}/data/references/handai-2013-references/2013-references.csv"
 )
@@ -147,43 +137,67 @@ MAX_ATTEMPTS_PER_REQUEST = 3
 # each question 5 times.
 ENSEMBLING_COUNT = 1
 
-results = []
-i = 0
+
 
 # We will not prune in our final analysis to make the evals easier to explain.
 # prune_questions_without_any_references(EVAL_SET, 2013)
 
 
-for entry in EVAL_SET:
-    question_num = str(entry.get_question_number())
-    print(
-        f"handling question {i} of {len(EVAL_SET)} "
-        f"(y={entry.get_year()}, q={question_num},"
-        f" type={entry.get_question_content_type()})"
-    )
+def _run_assistant_inference_with_config(is_few_shot: bool):
+    experiment_name = "zero-shot"
+    if is_few_shot:
+        experiment_name = "few-shot"
+    experiment_name = f"gpt4o-assistants-v2-{experiment_name}"
+    print(f"--- Beginning experiment {experiment_name} ---")
 
-    responses = []
-    for n in range(ENSEMBLING_COUNT):
-        print(f"   doing ensembling query {n} of {ENSEMBLING_COUNT}")
-        response = _run_assistant_inference(
-            OPENAI_CLIENT, ASSISTANT, entry, is_few_shot=IS_FEW_SHOT
+    # These are the v2 assistants where I used a vector store of ~300 files.
+    assistant_id = "asst_zSnXmisZfhznjRdeeBBq7xBA"
+    if is_few_shot:
+        assistant_id = "asst_JqyeCJIXrbsrqLQ6F7W7hsWV"
+    ASSISTANT = OPENAI_CLIENT.beta.assistants.retrieve(assistant_id)
+
+    results = []
+    i = 0
+
+    for entry in EVAL_SET:
+        question_num = str(entry.get_question_number())
+        print(
+            f"handling question {i} of {len(EVAL_SET)} "
+            f"(y={entry.get_year()}, q={question_num},"
+            f" type={entry.get_question_content_type()})"
         )
-        responses.append(response)
 
-    results.append(
-        InferenceResult(
-            question=entry,
-            prompt="""N/A - assistants""",
-            question_type=entry.get_question_content_type(),
-            model=Model.GPT4O,
-            responses=responses,
+        responses = []
+        for n in range(ENSEMBLING_COUNT):
+            print(f"   doing ensembling query {n} of {ENSEMBLING_COUNT}")
+            response = _run_assistant_inference(
+                OPENAI_CLIENT, ASSISTANT, entry, is_few_shot=is_few_shot
+            )
+            responses.append(response)
+
+        results.append(
+            InferenceResult(
+                question=entry,
+                prompt="""N/A - assistants""",
+                question_type=entry.get_question_content_type(),
+                model=Model.GPT4O,
+                responses=responses,
+            )
         )
-    )
-    i += 1
+        i += 1
 
-write_inference_csv(
-    results,
-    references_list=REFERENCES_LIST,
-    year=2013,
-    exp_name="gpt4o-assistants-v2-zero-shot",
-)
+    output_filepath =  write_inference_csv(
+        results,
+        references_list=REFERENCES_LIST,
+        year=2013,
+        exp_name=experiment_name,
+    )
+    print("")
+    return output_filepath
+
+
+paths = []
+paths.append(_run_assistant_inference_with_config(is_few_shot=False))
+paths.append(_run_assistant_inference_with_config(is_few_shot=True))
+print(f"See output at following paths:\n{"\n".join(paths)}")
+print("done :)")

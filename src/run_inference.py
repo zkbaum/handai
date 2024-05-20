@@ -39,7 +39,7 @@ MAX_ATTEMPTS_PER_REQUEST = 3
 # Given that ChatGPT is not deterministic, we may want to ask the same
 # question multiple times. For example, if this is 5, then we will ask
 # each question 5 times.
-ENSEMBLING_COUNT = 1
+ENSEMBLING_COUNT = 10
 
 
 def _run_inference(client, entry, selected_model, prompt, parsing_fn):
@@ -72,7 +72,7 @@ def _run_inference(client, entry, selected_model, prompt, parsing_fn):
     return response
 
 
-TRAIN_YEAR = 2008
+TRAIN_YEAR = 2012
 TEXT_TRAIN_SET = (
     QuestionsBuilder()
     .year(TRAIN_YEAR)
@@ -116,8 +116,7 @@ def _run_inference_with_configs(
             print("   skipping because gpt3.5 does not support image")
             continue
 
-        # TODO(zkbaum) for zero shot, we should strip out any <question> tags
-        # and figure names to make this as similar to regular use as possible.
+       
         prompt, _ = create_prompt(preamble, exemplars, entry)
 
         responses = []
@@ -148,16 +147,16 @@ def _run_inference_with_configs(
 paths = []
 for year in [2013]:
     # GPT3.5 zero-shot
-    # paths.append(
-    #     _run_inference_with_configs(
-    #         test_year=year,
-    #         model=Model.GPT3_5,
-    #         preamble=None,
-    #         exemplars=None,
-    #         parsing_fn=use_chatgpt_to_extract_answer,
-    #         exp_name="gpt3_zero_shot",
-    #     )
-    # )
+    paths.append(
+        _run_inference_with_configs(
+            test_year=year,
+            model=Model.GPT3_5,
+            preamble=None,
+            exemplars=None,
+            parsing_fn=use_chatgpt_to_extract_answer,
+            exp_name="gpt3_zero_shot",
+        )
+    )
     # GPT4 zero-shot
     paths.append(
         _run_inference_with_configs(

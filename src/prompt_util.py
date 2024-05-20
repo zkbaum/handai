@@ -214,7 +214,7 @@ def create_prompt(
 
 def create_instructions_for_assistant():
     train_set = (QuestionsBuilder()
-                  .year(2008)
+                  .year(2012)
                   .question_content_type(ContentType.TEXT_ONLY)
                   .commentary_content_type(ContentType.TEXT_ONLY)
                   .build())

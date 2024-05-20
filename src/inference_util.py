@@ -278,7 +278,7 @@ def use_chatgpt_to_extract_answer(
             "role": "system",
             "content": [
                 {
-                    "text": 'You are analyzing ChatGPT responses to multiple choice questions. Your task is to extract ChatGPT\'s final answer. \n\nIf you can identify ChatGPT\'s final answer, reply with just that letter inside finalAnswer tags. For example, "<finalAnswer>C</finalAnswer>".\n\n If you cannot identify the answer, reply with "<finalAnswer>N/A</finalAnswer>" ',
+                    "text": 'You are analyzing ChatGPT responses to multiple choice questions. Your task is to extract ChatGPT\'s final answer. \n\nIf you can identify ChatGPT\'s final answer, reply with just that letter inside finalAnswer tags. For example, "<finalAnswer>C</finalAnswer>".\n\n If you cannot identify the answer, reply with "<finalAnswer>Inconclusive</finalAnswer>" ',
                     "type": "text",
                 }
             ],
@@ -298,10 +298,10 @@ def use_chatgpt_to_extract_answer(
         }
     ]
 
-    # print(extractor_prompt)
     response = client.chat.completions.create(
-        model="gpt-4o",
-        # model="gpt-4-turbo",
+        # for some reason, gpt-4-turbo seems to be better at extraction than gpt-4o.
+        # therefore, we will use gpt-4-turbo for extraction.
+        model="gpt-4-turbo",
         # model="gpt-3.5-turbo",
         messages=extractor_prompt,
         max_tokens=256,
@@ -325,7 +325,7 @@ def use_chatgpt_to_extract_answer_textinput_assistants(
     extractor_prompt = [
         {
             "role": "system",
-            "content": 'You are analyzing ChatGPT responses to multiple choice questions. Your task is to extract ChatGPT\'s final answer. \n\nIf you can identify ChatGPT\'s final answer, reply with just that letter inside finalAnswer tags. For example, "<finalAnswer>C</finalAnswer>".\n\nIf you cannot identify the answer, reply with "<finalAnswer>N/A</finalAnswer>" ',
+            "content": 'You are analyzing ChatGPT responses to multiple choice questions. Your task is to extract ChatGPT\'s final answer. \n\nIf you can identify ChatGPT\'s final answer, reply with just that letter inside finalAnswer tags. For example, "<finalAnswer>C</finalAnswer>".\n\nIf you cannot identify the answer, reply with "<finalAnswer>Inconclusive</finalAnswer>" ',
         },
     ]
     extractor_prompt += ASSISTANTS_EXEMPLARS_FOR_EXTRACTOR
@@ -339,8 +339,8 @@ def use_chatgpt_to_extract_answer_textinput_assistants(
 
     # print(extractor_prompt)
     response = client.chat.completions.create(
-        model="gpt-4o",
-        # model="gpt-4-turbo",
+        # model="gpt-4o",
+        model="gpt-4-turbo",
         # model="gpt-3.5-turbo",
         messages=extractor_prompt,
         max_tokens=256,
