@@ -3,19 +3,15 @@ Script to analyze results from a hand AI experiment.
 """
 
 import pandas as pd
-from enum import Enum
-from private import get_result_csvpath_for_experiment, ROOT_DIR
+from eval_util import Experiment
+import os
+import sys
 import csv
 
-
-class Experiment(Enum):
-    HUMAN_CONTROL = "human"
-    ZERO_SHOT_GPT3_5 = "zero-shot-gpt3.5"
-    ZERO_SHOT_GPT4 = "zero-shot-gpt4"
-    ZERO_SHOT_GPT4O = "zero-shot-gpt4o"
-    FEW_SHOT_GPT4O = "few-shot-gpt4o"
-    FILE_SEARCH_ZERO_SHOT = "rag-zero-shot"
-    FILE_SEARCH_FEW_SHOT = "rag-few-shot"
+# Hack to import from parent dir
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
+from private import get_result_csvpath_for_experiment, ROOT_DIR
 
 
 def _determine_majority_or_tie(row):
@@ -54,9 +50,10 @@ def _parse_inference_results_df(df):
     df["chatgpt_majority_correct"] = df["majority_answer_or_tie"] == df["actual_answer"]
     df["chatgpt_unanimous_correct"] = df["unanimous_or_not"] == df["actual_answer"]
 
-    df["chatgpt_attempt0_correct"] = df["chatgpt_answer_0"] == df["actual_answer"]
-    df["chatgpt_attempt1_correct"] = df["chatgpt_answer_1"] == df["actual_answer"]
-    df["chatgpt_attempt2_correct"] = df["chatgpt_answer_2"] == df["actual_answer"]
+    for i in range(10):
+        df[f"chatgpt_attempt{i}_correct"] = (
+            df[f"chatgpt_answer_{i}"] == df["actual_answer"]
+        )
 
     df["human_correct_percentage"] /= 100
 
@@ -68,18 +65,32 @@ def _parse_inference_results_df(df):
                 "chatgpt_attempt0_correct",
                 "chatgpt_attempt1_correct",
                 "chatgpt_attempt2_correct",
+                "chatgpt_attempt3_correct",
+                "chatgpt_attempt4_correct",
+                "chatgpt_attempt5_correct",
+                "chatgpt_attempt6_correct",
+                "chatgpt_attempt7_correct",
+                "chatgpt_attempt8_correct",
+                "chatgpt_attempt9_correct",
             ]
         ].mean()
         * 100
     )
     df.reset_index(inplace=True)
 
-    # average the 3 attempts
+    # average the 10 attempts
     df["chatgpt_average_correct_percentage"] = df[
         [
             "chatgpt_attempt0_correct",
             "chatgpt_attempt1_correct",
             "chatgpt_attempt2_correct",
+            "chatgpt_attempt3_correct",
+            "chatgpt_attempt4_correct",
+            "chatgpt_attempt5_correct",
+            "chatgpt_attempt6_correct",
+            "chatgpt_attempt7_correct",
+            "chatgpt_attempt8_correct",
+            "chatgpt_attempt9_correct",
         ]
     ].mean(axis=1)
 
@@ -99,12 +110,21 @@ def _compute_averages():
     for exp in list(Experiment):
         if exp == Experiment.HUMAN_CONTROL:
             continue
+        if exp not in [
+            Experiment.ZERO_SHOT_GPT3_5,
+            Experiment.ZERO_SHOT_GPT4,
+            Experiment.ZERO_SHOT_GPT4O,
+            Experiment.FEW_SHOT_GPT4O,
+            Experiment.FILE_SEARCH_ZERO_SHOT,
+            Experiment.FILE_SEARCH_FEW_SHOT,
+        ]:
+            continue
         filepath = get_result_csvpath_for_experiment(exp)
         df = pd.read_csv(filepath)
         # If you only ran it one time.
-        # if exp == Experiment.ZERO_SHOT_GPT4O:
-        df["chatgpt_answer_1"] = df["chatgpt_answer_0"]
-        df["chatgpt_answer_2"] = df["chatgpt_answer_0"]
+        # # if exp == Experiment.ZERO_SHOT_GPT4O:
+        # df["chatgpt_answer_1"] = df["chatgpt_answer_0"]
+        # df["chatgpt_answer_2"] = df["chatgpt_answer_0"]
         df = _parse_inference_results_df(df)
         df["experiment_name"] = exp.value
         dfs.append(df)
@@ -225,4 +245,4 @@ _write_df_to_csv(averages_df, "average-stats.csv")
 
 # For some reason (likely because of the circular imports), this module gets
 # executed twice. So we manually add an exit.
-exit()
+# exit()

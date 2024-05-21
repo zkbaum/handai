@@ -206,6 +206,6 @@ def _run_assistant_inference_with_config(is_few_shot: bool):
 
 paths = []
 paths.append(_run_assistant_inference_with_config(is_few_shot=False))
-# paths.append(_run_assistant_inference_with_config(is_few_shot=True))
+paths.append(_run_assistant_inference_with_config(is_few_shot=True))
 print(f"See output at following paths:\n{"\n".join(paths)}")
 print("done :)")
