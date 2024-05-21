@@ -11,12 +11,12 @@ from private import get_result_csvpath_for_experiment, get_key_path, get_human_p
 
 class Experiment(Enum):
     HUMAN_CONTROL = "human"
-    ZERO_SHOT_GPT3_5 = "zero-shot-gpt3.5"
-    ZERO_SHOT_GPT4 = "zero-shot-gpt4"
-    ZERO_SHOT_GPT4O = "zero-shot-gpt4o"
-    FEW_SHOT_GPT4O = "few-shot-gpt4o"
-    FILE_SEARCH_ZERO_SHOT = "rag-zero-shot"
-    FILE_SEARCH_FEW_SHOT = "rag-few-shot"
+    GPT3_5 = "gpt3.5"
+    GPT4 = "gpt4"
+    GPT4O = "gpt4o"
+    GPT4O_BETTER_PROMPT = "gpt4o-better-prompt"
+    GPT4O_FILE_SEARCH = "gpt4-file-search"
+    GPT4O_FILE_SEARCH_AND_BETTER_PROMPT = "gpt4-file-search-and-better-prompt"
 
 
 def get_key_df():

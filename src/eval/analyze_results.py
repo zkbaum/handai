@@ -110,21 +110,9 @@ def _compute_averages():
     for exp in list(Experiment):
         if exp == Experiment.HUMAN_CONTROL:
             continue
-        if exp not in [
-            Experiment.ZERO_SHOT_GPT3_5,
-            Experiment.ZERO_SHOT_GPT4,
-            Experiment.ZERO_SHOT_GPT4O,
-            Experiment.FEW_SHOT_GPT4O,
-            Experiment.FILE_SEARCH_ZERO_SHOT,
-            Experiment.FILE_SEARCH_FEW_SHOT,
-        ]:
-            continue
+
         filepath = get_result_csvpath_for_experiment(exp)
         df = pd.read_csv(filepath)
-        # If you only ran it one time.
-        # # if exp == Experiment.ZERO_SHOT_GPT4O:
-        # df["chatgpt_answer_1"] = df["chatgpt_answer_0"]
-        # df["chatgpt_answer_2"] = df["chatgpt_answer_0"]
         df = _parse_inference_results_df(df)
         df["experiment_name"] = exp.value
         dfs.append(df)
@@ -137,12 +125,15 @@ def _compute_averages():
 def _compute_averages_per_attempt_slice_by_question_type():
     results = []
     for exp in list(Experiment):
+        if exp == Experiment.HUMAN_CONTROL:
+            continue
         filepath = get_result_csvpath_for_experiment(exp)
         df = pd.read_csv(filepath)
 
-        df["chatgpt_attempt0_correct"] = df["chatgpt_answer_0"] == df["actual_answer"]
-        df["chatgpt_attempt1_correct"] = df["chatgpt_answer_1"] == df["actual_answer"]
-        df["chatgpt_attempt2_correct"] = df["chatgpt_answer_2"] == df["actual_answer"]
+        for i in range(10):
+            df[f"chatgpt_attempt{i}_correct"] = (
+                df[f"chatgpt_answer_{i}"] == df["actual_answer"]
+            )
 
         question_type_counts = df["question_type"].value_counts()
         df["num_questions"] = df["question_type"].map(question_type_counts) / 100
@@ -152,6 +143,13 @@ def _compute_averages_per_attempt_slice_by_question_type():
                     "chatgpt_attempt0_correct",
                     "chatgpt_attempt1_correct",
                     "chatgpt_attempt2_correct",
+                    "chatgpt_attempt3_correct",
+                    "chatgpt_attempt4_correct",
+                    "chatgpt_attempt5_correct",
+                    "chatgpt_attempt6_correct",
+                    "chatgpt_attempt7_correct",
+                    "chatgpt_attempt8_correct",
+                    "chatgpt_attempt9_correct",
                     "num_questions",
                 ]
             ].mean()
@@ -166,7 +164,7 @@ def _compute_averages_per_attempt_slice_by_question_type():
         for _, row in df.iterrows():
             question_type = row["question_type"]
             num_questions = row["num_questions"]
-            for attempt in [0, 1, 2]:
+            for attempt in range(10):
                 col = f"chatgpt_attempt{attempt}_correct"
                 avg = row[col]
                 results.append([exp_name, question_type, num_questions, attempt, avg])
@@ -180,12 +178,15 @@ def _compute_averages_per_attempt(slice_by_question_type):
 
     results = []
     for exp in list(Experiment):
+        if exp == Experiment.HUMAN_CONTROL:
+            continue
         filepath = get_result_csvpath_for_experiment(exp)
         df = pd.read_csv(filepath)
 
-        df["chatgpt_attempt0_correct"] = df["chatgpt_answer_0"] == df["actual_answer"]
-        df["chatgpt_attempt1_correct"] = df["chatgpt_answer_1"] == df["actual_answer"]
-        df["chatgpt_attempt2_correct"] = df["chatgpt_answer_2"] == df["actual_answer"]
+        for i in range(10):
+            df[f"chatgpt_attempt{i}_correct"] = (
+                df[f"chatgpt_answer_{i}"] == df["actual_answer"]
+            )
 
         num_questions = len(df)
         df = (
@@ -194,20 +195,27 @@ def _compute_averages_per_attempt(slice_by_question_type):
                     "chatgpt_attempt0_correct",
                     "chatgpt_attempt1_correct",
                     "chatgpt_attempt2_correct",
+                    "chatgpt_attempt3_correct",
+                    "chatgpt_attempt4_correct",
+                    "chatgpt_attempt5_correct",
+                    "chatgpt_attempt6_correct",
+                    "chatgpt_attempt7_correct",
+                    "chatgpt_attempt8_correct",
+                    "chatgpt_attempt9_correct",
                 ]
             ].mean()
             * 100
         ).to_frame(name="Value")
 
-        attempt0_avg = df.loc["chatgpt_attempt0_correct", "Value"]
-        attempt1_avg = df.loc["chatgpt_attempt1_correct", "Value"]
-        attempt2_avg = df.loc["chatgpt_attempt2_correct", "Value"]
+        # attempt0_avg = df.loc["chatgpt_attempt0_correct", "Value"]
+        # attempt1_avg = df.loc["chatgpt_attempt1_correct", "Value"]
+        # attempt2_avg = df.loc["chatgpt_attempt2_correct", "Value"]
 
         exp_name = exp.value
         question_type = "ALL"
-        results.append([exp_name, question_type, num_questions, 0, attempt0_avg])
-        results.append([exp_name, question_type, num_questions, 1, attempt1_avg])
-        results.append([exp_name, question_type, num_questions, 2, attempt2_avg])
+        for i in range(10):
+            attempt_i_avg = df.loc[f"chatgpt_attempt{i}_correct", "Value"]
+            results.append([exp_name, question_type, num_questions, i, attempt_i_avg])
 
     return results
 
@@ -237,11 +245,11 @@ def _write_list_to_csv(results, filename):
 averages_df = _compute_averages()
 _write_df_to_csv(averages_df, "average-stats.csv")
 
-# averages_per_attempt_df = _compute_averages_per_attempt(slice_by_question_type=True)
-# _write_list_to_csv(averages_per_attempt_df, "per-attempt-stats-by-question-type.csv")
+averages_per_attempt_df = _compute_averages_per_attempt(slice_by_question_type=True)
+_write_list_to_csv(averages_per_attempt_df, "per-attempt-stats-by-question-type.csv")
 
-# averages_per_attempt_df = _compute_averages_per_attempt(slice_by_question_type=False)
-# _write_list_to_csv(averages_per_attempt_df, "per-attempt-stats.csv")
+averages_per_attempt_df = _compute_averages_per_attempt(slice_by_question_type=False)
+_write_list_to_csv(averages_per_attempt_df, "per-attempt-stats.csv")
 
 # For some reason (likely because of the circular imports), this module gets
 # executed twice. So we manually add an exit.

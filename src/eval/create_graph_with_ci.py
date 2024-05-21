@@ -18,12 +18,14 @@ key_df = get_key_df()
 human_df = get_human_df()
 
 # CSV in the form [question_id, attempt0, attempt1, attempt2]
-gpt_3_5_df = get_chatgpt_df(Experiment.ZERO_SHOT_GPT3_5)
-gpt4_df = get_chatgpt_df(Experiment.ZERO_SHOT_GPT4)
-gpt4o_df = get_chatgpt_df(Experiment.ZERO_SHOT_GPT4O)
-gpt4o_fewshot_df = get_chatgpt_df(Experiment.FEW_SHOT_GPT4O)
-gpt4o_filesearch_df = get_chatgpt_df(Experiment.FILE_SEARCH_ZERO_SHOT)
-gpt4o_filesearch_fewshot_df = get_chatgpt_df(Experiment.FILE_SEARCH_FEW_SHOT)
+gpt_3_5_df = get_chatgpt_df(Experiment.GPT3_5)
+gpt4_df = get_chatgpt_df(Experiment.GPT4)
+gpt4o_df = get_chatgpt_df(Experiment.GPT4O)
+gpt4o_fewshot_df = get_chatgpt_df(Experiment.GPT4O_BETTER_PROMPT)
+gpt4o_filesearch_df = get_chatgpt_df(Experiment.GPT4O_FILE_SEARCH)
+gpt4o_filesearch_fewshot_df = get_chatgpt_df(
+    Experiment.GPT4O_FILE_SEARCH_AND_BETTER_PROMPT
+)
 
 
 # Filter out Video questions from the key dataset
