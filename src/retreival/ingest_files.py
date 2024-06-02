@@ -2,11 +2,16 @@
 """
 
 import os
+import sys
 import pandas as pd
 from dataclasses import dataclass
 from openai import OpenAI
 from datetime import datetime
 import csv
+
+# Hack to import from parent dir
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
 from private import ROOT_DIR
 
 
@@ -36,13 +41,12 @@ def read_input_references_csv(filepath) -> "dic[str, dic[str, Reference]]":
     # { 1: {1: Reference(), 2: Reference()}, 34: {1: Reference()}}
     references = {}
     for dic in dict_list:
-        question_id = dic["question_id"]
+        # question_id = dic["question_id"]
         question_num = dic["question_num"]
         reference_num = dic["reference_num"]
         reference = dic["reference"]
         is_uploaded = (
-            "Yes"
-            == dic["Did you download the PDF and upload to the drive folder?"]
+            "Yes" == dic["Did you download the PDF and upload to the drive folder?"]
         )
         if question_num not in references:
             references[question_num] = {}
@@ -50,7 +54,7 @@ def read_input_references_csv(filepath) -> "dic[str, dic[str, Reference]]":
             print("FATAL ERROR: UNEXPECTED DUP REFERENCE")
             exit()
         references[question_num][reference_num] = Reference(
-            question_id=question_id,
+            question_id="n/a",
             question_num=question_num,
             reference_num=reference_num,
             reference=reference,
@@ -74,14 +78,18 @@ def get_single_file_name(directory):
 
 def _upload_file_to_openai(client, root_dir_path: str, ref: Reference):
     # Find the directory
-    dir_path = f"{root_dir_path}/question_{ref.question_num}/reference_{ref.reference_num}"
+    dir_path = (
+        f"{root_dir_path}/question_{ref.question_num}/reference_{ref.reference_num}"
+    )
     file_path = f"{dir_path}/{get_single_file_name(dir_path)}"
     if file_path is None:
         print(f"FATAL ERROR, {dir_path} should have exactly 1 file")
         exit(1)
 
     # rename the file to something easier to read
-    new_file_path = f"{dir_path}/question_{ref.question_num}_reference_{ref.reference_num}.pdf"
+    new_file_path = (
+        f"{dir_path}/question_{ref.question_num}_reference_{ref.reference_num}.pdf"
+    )
     os.rename(file_path, new_file_path)
 
     # We expect there to be one fine in a directory
@@ -93,9 +101,7 @@ def _upload_file_to_openai(client, root_dir_path: str, ref: Reference):
     return openai_file
 
 
-def _upload_files_to_openai(
-    client, root_dir_path: str, input
-) -> "list[OpenAIFile]":
+def _upload_files_to_openai(client, root_dir_path: str, input) -> "list[OpenAIFile]":
     results = []
     for question_num in input:
         for ref_num in input[question_num]:
@@ -114,7 +120,7 @@ def _upload_files_to_openai(
                     file_name=openai_filename,
                 )
             )
-    print(results)
+    # print(results)
     return results
 
 
@@ -183,8 +189,9 @@ def _delete_all_files(client, dry_run: bool):
         for file in files.data:
             file_id = file.id
             filename = file.filename
-            if file.created_at < datetime(2024, 2, 14).timestamp():
-                print(f"skipping {filename} because before feb 14")
+            delete_cutoff = datetime(2024, 6, 1, 12)
+            if file.created_at < delete_cutoff.timestamp():
+                print(f"skipping {filename} because before {delete_cutoff}")
             elif dry_run:
                 print(
                     f"[dry run] would have Deleted file {filename} with ID: {file_id}"
@@ -224,7 +231,7 @@ def _validate_pdfs(root_dir_path: str) -> bool:
     print("local files are valid :)")
 
 
-# input_references_path = f'{ROOT_DIR}/data/references/handai-2013-references/INPUT.csv'
+# input_references_path = f"{ROOT_DIR}/data/references/handai-2013-references/INPUT.csv"
 # input = read_input_references_csv(input_references_path)
 input = _read_manual_references()
 

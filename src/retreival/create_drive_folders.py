@@ -8,6 +8,7 @@ from google.auth.transport.requests import Request
 import os.path
 import pickle
 from dataclasses import dataclass
+from google.auth.exceptions import RefreshError
 
 
 @dataclass
@@ -30,18 +31,27 @@ def get_creds():
     if os.path.exists("token.pickle"):
         with open("token.pickle", "rb") as token:
             creds = pickle.load(token)
+            print(f"Token loaded. Valid: {creds.valid}")
+
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            try:
+                creds.refresh(Request())
+                print("Token refreshed successfully.")
+            except RefreshError:
+                print("Token refresh failed. Need to re-authenticate.")
+                creds = None
+        if not creds:
             flow = InstalledAppFlow.from_client_secrets_file(
                 "client_secret.json", SCOPES
             )
             creds = flow.run_local_server(port=0)
+            print("Authenticated and received new credentials.")
         # Save the credentials for the next run
         with open("token.pickle", "wb") as token:
             pickle.dump(creds, token)
+            print("Token saved to token.pickle.")
 
     return creds
 

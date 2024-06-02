@@ -48,6 +48,23 @@ def _create_vector_store(client):
     return vector_store.id
 
 
+def _incrementally_add_files_to_store(client, vector_store_id):
+    """If the store already exist, we can incrementally add files to it."""
+    input_references_path = "/path/to/new/files.csv"
+
+    df = pd.read_csv(input_references_path)["openai_file_id"].dropna()
+    file_ids = [id for id in df]
+
+    start_time = datetime.datetime.now()
+    batch = client.beta.vector_stores.file_batches.create_and_poll(
+        vector_store_id=vector_store_id, file_ids=file_ids
+    )
+    print(
+        f"  added {len(file_ids)} files with batch id {batch.id}"
+        f"in {datetime.datetime.now() - start_time}"
+    )
+
+
 OPENAI_CLIENT = OpenAI()
 IS_FEW_SHOT = False
 
@@ -56,6 +73,7 @@ IS_FEW_SHOT = False
 # to actually use it.
 vector_store_id = "vs_jbxCrdb80BZBWUIteKMnLO6u"
 # vector_store_id = _create_vector_store(OPENAI_CLIENT)
+# _incrementally_add_files_to_store(OPENAI_CLIENT, vector_store_id)
 
 if IS_FEW_SHOT:
     assistant = OPENAI_CLIENT.beta.assistants.create(

@@ -350,8 +350,11 @@ def use_chatgpt_to_extract_answer_textinput_assistants(
     # print(extractor_prompt)
     try:
         response = client.chat.completions.create(
-            # model="gpt-4o",
-            model="gpt-4-turbo",
+            # Update June 1: there was a significant quality drop in gpt-4-turbo
+            # (it couldn't do basic output format of <finalAnswer>) so I'm
+            # switching to gpt-4o.
+            model="gpt-4o",
+            # model="gpt-4-turbo",
             # model="gpt-3.5-turbo",
             messages=extractor_prompt,
             max_tokens=256,

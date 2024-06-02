@@ -104,7 +104,7 @@ gpt4ofilesearchfewshot_accuracy, gpt4ofilesearchfewshot_ci = (
 # Bar chart plot
 labels = [
     "human ",
-    "gpt3.5",
+    "gpt3.5\n(image not\nsupported)",
     "gpt4",
     "gpt4o",
     "gpt4o with\nbetter prompt",
@@ -126,8 +126,8 @@ image_accuracies = [
     gpt4_accuracy.get("Image", 0),
     gpt4o_accuracy.get("Image", 0),
     gpt4ofewshot_accuracy.get("Image", 0),
-    0,  # file search does not support image
-    0,  # file search does not support image
+    gpt4ofilesearch_accuracy.get("Image", 0),
+    gpt4ofilesearchfewshot_accuracy.get("Image", 0),
 ]
 text_ci = [
     human_ci.get("Text", 0),
@@ -144,8 +144,8 @@ image_ci = [
     gpt4_ci.get("Image", 0),
     gpt4o_ci.get("Image", 0),
     gpt4ofewshot_ci.get("Image", 0),
-    0,  # file search does not support image
-    0,  # file search does not support image
+    gpt4ofilesearch_ci.get("Image", 0),
+    gpt4ofilesearchfewshot_ci.get("Image", 0),
 ]
 
 x = np.arange(len(labels))
@@ -173,7 +173,7 @@ rects2 = ax.bar(
 
 ax.set_ylim([0, 1])
 ax.set_xlabel("Group")
-ax.set_ylabel("Accuracy (%)")
+ax.set_ylabel("Accuracy")
 ax.set_title("Performance of humans vs ChatGPT on 2013 self-assessment")
 ax.set_xticks(x)
 ax.set_xticklabels(labels)

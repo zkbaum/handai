@@ -115,7 +115,8 @@ OPENAI_CLIENT = OpenAI()
 EVAL_SET = (
     QuestionsBuilder()
     .year(2013)
-    .question_content_type(ContentType.TEXT_ONLY)
+    .question_content_type(ContentType.TEXT_AND_IMAGES)
+    # .question_content_type(ContentType.TEXT_ONLY)
     # okay we shouldn't care about commentary type, but I accidentally
     # forgot to comment it out.
     # Btw, questions 45, 80, 191 are missing from the references list...so
@@ -125,6 +126,9 @@ EVAL_SET = (
     .build()
 )
 
+# example of filtering eval set based on questions
+# useful in case you need to redo something.
+# EVAL_SET = [e for e in EVAL_SET if e.get_question_number() in [56, 62, 64, 74, 75, 76, 89, 96, 97, 104, 105, 130, 143, 172, 175, 179, 181, 190]]
 REFERENCES_LIST = read_references_csv(
     f"{ROOT_DIR}/data/references/handai-2013-references/2013-references.csv"
 )
