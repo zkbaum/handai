@@ -2,7 +2,7 @@ import os
 import sys
 import pandas as pd
 import numpy as np
-from scipy.stats import chi2_contingency
+from scipy.stats import f_oneway
 from eval_util import get_chatgpt_df, get_key_df, get_human_df, Experiment
 
 # Hack to import from parent dir
@@ -63,7 +63,7 @@ gpt4ofilesearchfewshot_accuracy, gpt4ofilesearchfewshot_results = _calculate_acc
 
 # Create a list of results to compare
 experiments = [
-    ("human", human_results),
+    # ("human", human_results),
     ("gpt3.5", gpt_3_5_results),
     ("gpt4", gpt4_results),
     ("gpt4o", gpt4o_results),
@@ -75,7 +75,7 @@ experiments = [
 experiment_names = [exp[0] for exp in experiments]
 
 
-# Function to calculate p-values using chi-squared test
+# Function to calculate p-values using one-way ANOVA
 def calculate_p_values_matrix(experiments, question_type):
     n = len(experiments)
     p_values_matrix = np.zeros((n, n))
@@ -84,26 +84,14 @@ def calculate_p_values_matrix(experiments, question_type):
             name1, results1 = experiments[i]
             name2, results2 = experiments[j]
             if question_type in results1 and question_type in results2:
-                count1 = len(results1[question_type])
-                count2 = len(results2[question_type])
-                if count1 > 0 and count2 > 0:
-                    observed = np.array(
-                        [
-                            [
-                                sum(results1[question_type]),
-                                count1 - sum(results1[question_type]),
-                            ],
-                            [
-                                sum(results2[question_type]),
-                                count2 - sum(results2[question_type]),
-                            ],
-                        ]
-                    )
-                    # Skip if any expected frequency is less than 5
-                    if np.all(observed >= 5):
-                        chi2, p, dof, expected = chi2_contingency(observed)
-                        p_values_matrix[i, j] = p
-                        p_values_matrix[j, i] = p  # Symmetric matrix
+                group1 = results1[question_type]
+                group2 = results2[question_type]
+                if (
+                    len(group1) > 1 and len(group2) > 1
+                ):  # ANOVA requires at least 2 samples per group
+                    f_val, p_val = f_oneway(group1, group2)
+                    p_values_matrix[i, j] = p_val
+                    p_values_matrix[j, i] = p_val  # Symmetric matrix
     return p_values_matrix
 
 
