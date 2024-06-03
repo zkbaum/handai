@@ -39,7 +39,7 @@ MAX_ATTEMPTS_PER_REQUEST = 3
 # Given that ChatGPT is not deterministic, we may want to ask the same
 # question multiple times. For example, if this is 5, then we will ask
 # each question 5 times.
-ENSEMBLING_COUNT = 2
+ENSEMBLING_COUNT = 10
 
 
 def _run_inference(client, entry, selected_model, prompt, parsing_fn):
@@ -72,7 +72,7 @@ def _run_inference(client, entry, selected_model, prompt, parsing_fn):
     return response
 
 
-TRAIN_YEAR = 2012
+TRAIN_YEAR = 2008
 TEXT_TRAIN_SET = (
     QuestionsBuilder()
     .year(TRAIN_YEAR)
@@ -161,16 +161,16 @@ for year in [2013]:
         )
     )
     # GPT4 zero-shot
-    paths.append(
-        _run_inference_with_configs(
-            test_year=year,
-            model=Model.GPT4,
-            preamble=None,
-            exemplars=None,
-            parsing_fn=use_chatgpt_to_extract_answer,
-            exp_name="gpt4_zero_shot_shard4",
-        )
-    )
+    # paths.append(
+    #     _run_inference_with_configs(
+    #         test_year=year,
+    #         model=Model.GPT4,
+    #         preamble=None,
+    #         exemplars=None,
+    #         parsing_fn=use_chatgpt_to_extract_answer,
+    #         exp_name="gpt4_zero_shot_shard4",
+    #     )
+    # )
     # GPT4o zero-shot
     paths.append(
         _run_inference_with_configs(

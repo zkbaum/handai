@@ -303,7 +303,11 @@ def use_chatgpt_to_extract_answer(
         response = client.chat.completions.create(
             # for some reason, gpt-4-turbo seems to be better at extraction than gpt-4o.
             # therefore, we will use gpt-4-turbo for extraction.
-            model="gpt-4-turbo",
+            # model="gpt-4-turbo",
+            # update june 2 - we will revert to gpt-4o
+            # because we are dropping the gpt4 experiments and observed
+            # some quality regressions in using gpt4 for extraction too
+            model="gpt-4o",
             # model="gpt-3.5-turbo",
             messages=extractor_prompt,
             max_tokens=256,

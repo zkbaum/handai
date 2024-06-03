@@ -29,17 +29,24 @@ def get_human_df():
     return pd.read_csv(get_human_path())
 
 
-def get_chatgpt_df(experiment: Experiment):
-    # # CSV in the form [question_id, attempt0, attempt1, attempt2]
+def get_chatgpt_df(year: int, experiment: Experiment):
+    # # CSV in the form [question_id, question_type,actual_answer, human_correct_percentage, attempt0, attempt1, attempt2, .., attemptn]
     # gpt_3_5_df = pd.read_csv(f"{ROOT_DIR}/gpt3-5.csv")
-    filepath = get_result_csvpath_for_experiment(experiment)
+    filepath = get_result_csvpath_for_experiment(year, experiment)
     df = pd.read_csv(filepath)
 
     for i in range(10):
         df.rename(columns={f"chatgpt_answer_{i}": f"attempt{i}"}, inplace=True)
 
-    selected_indices = ["question_number"] + [f"attempt{i}" for i in range(10)]
+    selected_indices = [
+        "question_number",
+        "question_type",
+        "actual_answer",
+        "human_correct_percentage",
+    ] + [f"attempt{i}" for i in range(10)]
     df = df[selected_indices]
+    df = df.replace("ContentType.TEXT_ONLY", "Text")
+    df = df.replace("ContentType.TEXT_AND_IMAGES", "Image")
     df["question_number"] = df["question_number"].apply(lambda x: f"question{x}")
     df.rename(columns={"question_number": "question_id"}, inplace=True)
 

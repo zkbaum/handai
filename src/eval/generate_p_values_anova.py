@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 import numpy as np
 from scipy.stats import f_oneway, shapiro, levene
-from eval_util import get_chatgpt_df, get_key_df, get_human_df, Experiment
+from eval_util import get_chatgpt_df, Experiment
 
 # Hack to import from parent dir
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -11,59 +11,47 @@ sys.path.append(parent_dir)
 from private import ROOT_DIR
 
 # Load datasets
-key_df = get_key_df()
-human_df = get_human_df()
-gpt_3_5_df = get_chatgpt_df(Experiment.GPT3_5)
-gpt4_df = get_chatgpt_df(Experiment.GPT4)
-gpt4o_df = get_chatgpt_df(Experiment.GPT4O)
-gpt4o_fewshot_df = get_chatgpt_df(Experiment.GPT4O_BETTER_PROMPT)
-gpt4o_filesearch_df = get_chatgpt_df(Experiment.GPT4O_FILE_SEARCH)
+gpt_3_5_df = get_chatgpt_df(2013000, Experiment.GPT3_5)
+gpt4_df = get_chatgpt_df(2013000, Experiment.GPT4)
+gpt4o_df = get_chatgpt_df(2013000, Experiment.GPT4O)
+gpt4o_fewshot_df = get_chatgpt_df(2013000, Experiment.GPT4O_BETTER_PROMPT)
+gpt4o_filesearch_df = get_chatgpt_df(2013000, Experiment.GPT4O_FILE_SEARCH)
 gpt4o_filesearch_fewshot_df = get_chatgpt_df(
-    Experiment.GPT4O_FILE_SEARCH_AND_BETTER_PROMPT
+    2013000, Experiment.GPT4O_FILE_SEARCH_AND_BETTER_PROMPT
 )
 
-# Filter out Video questions from the key dataset
-key_df = key_df[key_df["question_type"] != "Video"]
-key_df.set_index("question_id", inplace=True)
 
-
-def _calculate_accuracy(answers_df, key_df):
-    results = {q_type: [] for q_type in key_df["question_type"].unique()}
+def _calculate_accuracy(answers_df):
+    results = {q_type: [] for q_type in answers_df["question_type"].unique()}
     for qid, row in answers_df.iterrows():
-        if qid in key_df.index:
-            correct_answer = key_df.loc[qid, "correct_answer"]
-            q_type = key_df.loc[qid, "question_type"]
-            results[q_type].extend([1 if ans == correct_answer else 0 for ans in row])
+        attempts = [row[f"attempt{n}"] for n in range(10)]
+        correct_answer = row["actual_answer"]
+        q_type = row["question_type"]
+        results[q_type].extend([1 if ans == correct_answer else 0 for ans in attempts])
     accuracy = {q_type: np.mean(results[q_type]) for q_type in results}
     return accuracy, results
 
 
 # Calculate accuracies and raw results
-human_accuracy, human_results = _calculate_accuracy(
-    human_df.set_index("student_id").T, key_df
-)
 gpt_3_5_accuracy, gpt_3_5_results = _calculate_accuracy(
-    gpt_3_5_df.set_index("question_id"), key_df
+    gpt_3_5_df.set_index("question_id")
 )
-gpt4_accuracy, gpt4_results = _calculate_accuracy(
-    gpt4_df.set_index("question_id"), key_df
-)
-gpt4o_accuracy, gpt4o_results = _calculate_accuracy(
-    gpt4o_df.set_index("question_id"), key_df
-)
+gpt4_accuracy, gpt4_results = _calculate_accuracy(gpt4_df.set_index("question_id"))
+gpt4o_accuracy, gpt4o_results = _calculate_accuracy(gpt4o_df.set_index("question_id"))
 gpt4ofewshot_accuracy, gpt4ofewshot_results = _calculate_accuracy(
-    gpt4o_fewshot_df.set_index("question_id"), key_df
+    gpt4o_fewshot_df.set_index("question_id")
 )
 gpt4ofilesearch_accuracy, gpt4ofilesearch_results = _calculate_accuracy(
-    gpt4o_filesearch_df.set_index("question_id"), key_df
+    gpt4o_filesearch_df.set_index("question_id")
 )
 gpt4ofilesearchfewshot_accuracy, gpt4ofilesearchfewshot_results = _calculate_accuracy(
-    gpt4o_filesearch_fewshot_df.set_index("question_id"), key_df
+    gpt4o_filesearch_fewshot_df.set_index("question_id")
 )
 
 # Create a list of results to compare
 experiments = [
-    ("human", gpt_3_5_results),
+    # do not include human because the sample sizes are so different
+    # ("human", human_results),
     ("gpt3.5", gpt_3_5_results),
     ("gpt4", gpt4_results),
     ("gpt4o", gpt4o_results),
@@ -160,3 +148,32 @@ text_p_values_df.to_csv(text_output_path)
 image_p_values_df.to_csv(image_output_path)
 print(f"wrote text output to {text_output_path}")
 print(f"wrote image output to {image_output_path}")
+
+# now convert to a friendlier format
+
+
+# Function to determine the verdict
+def get_verdict(p_value):
+    return "SIGNIFICANT" if p_value < 0.05 else "NOT_SIGNIFICANT"
+
+
+# Create results DataFrame in the specified format
+results = []
+
+# Perform comparisons for text and image dataframes
+for df, df_type in zip([text_p_values_df, image_p_values_df], ["text", "image"]):
+    for i in range(len(df.index)):
+        for j in range(i + 1, len(df.columns)):
+            p_value = df.iloc[i, j]
+            if p_value != 0:  # Exclude comparisons where p_value is 0
+                results.append(
+                    [df_type, df.index[i], df.columns[j], p_value, get_verdict(p_value)]
+                )
+
+final_df = pd.DataFrame(
+    results, columns=["Type", "Experiment 1", "Experiment 2", "p-value", "verdict"]
+)
+
+final_output_path = f"{ROOT_DIR}/out/analysis/final_anova.csv"
+final_df.to_csv(final_output_path)
+print(f"wrote final combined output to {final_output_path}")

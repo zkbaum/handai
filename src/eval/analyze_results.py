@@ -111,7 +111,7 @@ def _compute_averages():
         if exp == Experiment.HUMAN_CONTROL:
             continue
 
-        filepath = get_result_csvpath_for_experiment(exp)
+        filepath = get_result_csvpath_for_experiment(2013, exp)
         df = pd.read_csv(filepath)
         df = _parse_inference_results_df(df)
         df["experiment_name"] = exp.value
@@ -127,7 +127,7 @@ def _compute_averages_per_attempt_slice_by_question_type():
     for exp in list(Experiment):
         if exp == Experiment.HUMAN_CONTROL:
             continue
-        filepath = get_result_csvpath_for_experiment(exp)
+        filepath = get_result_csvpath_for_experiment(2013, exp)
         df = pd.read_csv(filepath)
 
         for i in range(10):
@@ -180,7 +180,7 @@ def _compute_averages_per_attempt(slice_by_question_type):
     for exp in list(Experiment):
         if exp == Experiment.HUMAN_CONTROL:
             continue
-        filepath = get_result_csvpath_for_experiment(exp)
+        filepath = get_result_csvpath_for_experiment(2013, exp)
         df = pd.read_csv(filepath)
 
         for i in range(10):
@@ -235,7 +235,13 @@ def _write_list_to_csv(results, filename):
     with open(output_path, mode="w", newline="") as file:
         writer = csv.writer(file)
 
-        header = ["exp_name", "question_type", "num_questions", "attempt", "average"]
+        header = [
+            "exp_name",
+            "question_type",
+            "num_questions",
+            "attempt",
+            "average",
+        ]
         writer.writerow(header)
         for result in results:
             writer.writerow(result)
@@ -248,8 +254,8 @@ _write_df_to_csv(averages_df, "average-stats.csv")
 averages_per_attempt_df = _compute_averages_per_attempt(slice_by_question_type=True)
 _write_list_to_csv(averages_per_attempt_df, "per-attempt-stats-by-question-type.csv")
 
-averages_per_attempt_df = _compute_averages_per_attempt(slice_by_question_type=False)
-_write_list_to_csv(averages_per_attempt_df, "per-attempt-stats.csv")
+# averages_per_attempt_df = _compute_averages_per_attempt(slice_by_question_type=False)
+# _write_list_to_csv(averages_per_attempt_df, "per-attempt-stats.csv")
 
 # For some reason (likely because of the circular imports), this module gets
 # executed twice. So we manually add an exit.
