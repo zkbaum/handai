@@ -16,7 +16,7 @@ print("working...this may take a few seconds")
 # Load datasets
 # CSV in the form [question_id, attempt0, attempt1, attempt2]
 gpt_3_5_df = get_chatgpt_df(2013000, Experiment.GPT3_5)
-gpt4_df = get_chatgpt_df(2013000, Experiment.GPT4)
+# gpt4_df = get_chatgpt_df(2013000, Experiment.GPT4)
 gpt4o_df = get_chatgpt_df(2013000, Experiment.GPT4O)
 gpt4o_fewshot_df = get_chatgpt_df(2013000, Experiment.GPT4O_BETTER_PROMPT)
 gpt4o_filesearch_df = get_chatgpt_df(2013000, Experiment.GPT4O_FILE_SEARCH)
@@ -73,7 +73,7 @@ def _calculate_chatgpt_accuracy_and_ci(answers_df):
 # Calculate accuracies and confidence intervals
 human_accuracy, human_ci = _calculate_human_accuracy_and_ci()
 # gpt_3_5_accuracy, gpt_3_5_ci = _calculate_chatgpt_accuracy_and_ci(gpt_3_5_df)
-gpt4_accuracy, gpt4_ci = _calculate_chatgpt_accuracy_and_ci(gpt4_df)
+# gpt4_accuracy, gpt4_ci = _calculate_chatgpt_accuracy_and_ci(gpt4_df)
 gpt4o_accuracy, gpt4o_ci = _calculate_chatgpt_accuracy_and_ci(gpt4o_df)
 gpt4ofewshot_accuracy, gpt4ofewshot_ci = _calculate_chatgpt_accuracy_and_ci(
     gpt4o_fewshot_df
@@ -89,7 +89,7 @@ gpt4ofilesearch_accuracy, gpt4ofilesearch_ci = (
 labels = [
     f"human\n(on {NUM_HUMAN_EXAMINEES} examinees)",
     # "gpt3.5 - image\n not supported\n(run 10 times)",
-    "gpt4",
+    # "gpt4",
     "gpt4o",
     "gpt4o with\nbetter prompt",
     "gpt4o with\nfile search",
@@ -98,7 +98,7 @@ labels = [
 text_accuracies = [
     human_accuracy.get("Text", 0),
     # gpt_3_5_accuracy.get("Text", 0),
-    gpt4_accuracy.get("Text", 0),
+    # gpt4_accuracy.get("Text", 0),
     gpt4o_accuracy.get("Text", 0),
     gpt4ofewshot_accuracy.get("Text", 0),
     gpt4ofilesearch_accuracy.get("Text", 0),
@@ -107,7 +107,7 @@ text_accuracies = [
 image_accuracies = [
     human_accuracy.get("Image", 0),
     # 0,  # gpt3.5 does not support image
-    gpt4_accuracy.get("Image", 0),
+    # gpt4_accuracy.get("Image", 0),
     gpt4o_accuracy.get("Image", 0),
     gpt4ofewshot_accuracy.get("Image", 0),
     gpt4ofilesearch_accuracy.get("Image", 0),
@@ -116,7 +116,7 @@ image_accuracies = [
 text_ci = [
     human_ci.get("Text", 0),
     # gpt_3_5_ci.get("Text", 0),
-    gpt4_ci.get("Text", 0),
+    # gpt4_ci.get("Text", 0),
     gpt4o_ci.get("Text", 0),
     gpt4ofewshot_ci.get("Text", 0),
     gpt4ofilesearch_ci.get("Text", 0),
@@ -125,7 +125,7 @@ text_ci = [
 image_ci = [
     human_ci.get("Image", 0),
     # 0,  # gpt3.5 does not support image
-    gpt4_ci.get("Image", 0),
+    # gpt4_ci.get("Image", 0),
     gpt4o_ci.get("Image", 0),
     gpt4ofewshot_ci.get("Image", 0),
     gpt4ofilesearch_ci.get("Image", 0),
