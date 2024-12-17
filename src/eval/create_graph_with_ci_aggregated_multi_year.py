@@ -21,12 +21,8 @@ def _calculate_human_accuracy():
     accuracies = []
     for year in years:
         sample_df = get_chatgpt_df(year, Experiment.GPT4O)
-        grouped_data = sample_df.groupby("question_type")[
-            "human_correct_percentage"
-        ]
-        year_accuracy = {
-            q_type: np.mean(data) / 100 for q_type, data in grouped_data
-        }
+        grouped_data = sample_df.groupby("question_type")["human_correct_percentage"]
+        year_accuracy = {q_type: np.mean(data) / 100 for q_type, data in grouped_data}
         accuracies.append(year_accuracy)
     overall_accuracy = {
         "Text": np.mean([acc.get("Text", 0) for acc in accuracies]),
@@ -72,9 +68,7 @@ def _calculate_question_counts():
 
 # Calculate accuracies, confidence intervals, and question counts
 human_accuracy = _calculate_human_accuracy()
-gpt_3_5_accuracy, gpt_3_5_ci = _calculate_chatgpt_accuracy_and_ci(
-    Experiment.GPT3_5
-)
+gpt_3_5_accuracy, gpt_3_5_ci = _calculate_chatgpt_accuracy_and_ci(Experiment.GPT3_5)
 gpt4o_accuracy, gpt4o_ci = _calculate_chatgpt_accuracy_and_ci(Experiment.GPT4O)
 gpt4ofewshot_accuracy, gpt4ofewshot_ci = _calculate_chatgpt_accuracy_and_ci(
     Experiment.GPT4O_BETTER_PROMPT
@@ -117,9 +111,7 @@ x = np.arange(len(labels))
 width = 0.35
 
 # Separate data with and without CI
-text_accuracies_with_ci = [
-    acc for acc, ci in zip(text_accuracies, text_ci) if ci > 0
-]
+text_accuracies_with_ci = [acc for acc, ci in zip(text_accuracies, text_ci) if ci > 0]
 text_accuracies_without_ci = [
     acc for acc, ci in zip(text_accuracies, text_ci) if ci == 0
 ]
@@ -196,9 +188,7 @@ rects2_without_ci = ax.bar(
 ax.set_ylim([0, 1])
 ax.set_xlabel("Group")
 ax.set_ylabel("Accuracy")
-ax.set_title(
-    "Performance of humans vs ChatGPT on 5 years of self-assessment exams"
-)
+ax.set_title("Performance of humans vs ChatGPT on 5 years of self-assessment exams")
 ax.set_xticks(x)
 ax.set_xticklabels(labels, fontsize=12)
 
@@ -216,7 +206,7 @@ def _autolabel(rects, ci):
     """
     for rect, c in zip(rects, ci):
         height = rect.get_height()
-        label = f"{height:.2%}" if c == 0 else f"{height:.2%}\n±{c:.2%}"
+        label = f"{height:.1%}" if c == 0 else f"{height:.1%} ± {c:.1%}"
         if height == 0:
             label = ""
         ax.annotate(

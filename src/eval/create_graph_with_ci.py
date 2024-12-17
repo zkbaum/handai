@@ -29,9 +29,7 @@ NUM_HUMAN_EXAMINEES = 1721
 
 def _calculate_human_accuracy_and_ci():
     sample_df = get_chatgpt_df(2013, Experiment.GPT4O)
-    grouped_data = sample_df.groupby("question_type")[
-        "human_correct_percentage"
-    ]
+    grouped_data = sample_df.groupby("question_type")["human_correct_percentage"]
     accuracy = {q_type: np.mean(data) / 100 for q_type, data in grouped_data}
     std_err_corrected = grouped_data.std() / np.sqrt(NUM_HUMAN_EXAMINEES)
     ci_corrected = std_err_corrected * 1.96 / 100
@@ -78,8 +76,8 @@ gpt4o_accuracy, gpt4o_ci = _calculate_chatgpt_accuracy_and_ci(gpt4o_df)
 gpt4ofewshot_accuracy, gpt4ofewshot_ci = _calculate_chatgpt_accuracy_and_ci(
     gpt4o_fewshot_df
 )
-gpt4ofilesearch_accuracy, gpt4ofilesearch_ci = (
-    _calculate_chatgpt_accuracy_and_ci(gpt4o_filesearch_df)
+gpt4ofilesearch_accuracy, gpt4ofilesearch_ci = _calculate_chatgpt_accuracy_and_ci(
+    gpt4o_filesearch_df
 )
 # gpt4ofilesearchfewshot_accuracy, gpt4ofilesearchfewshot_ci = (
 #     _calculate_chatgpt_accuracy_and_ci(gpt4o_filesearch_fewshot_df)
@@ -170,9 +168,7 @@ rects2 = ax.bar(
 ax.set_ylim([0, 1])
 ax.set_xlabel("Group")
 ax.set_ylabel("Accuracy")
-ax.set_title(
-    "[2013 only] Performance of humans vs ChatGPT on self-assessment exam"
-)
+ax.set_title("[2013 only] Performance of humans vs ChatGPT on self-assessment exam")
 ax.set_xticks(x)
 ax.set_xticklabels(labels, fontsize=12)
 ax.legend()
@@ -188,7 +184,7 @@ def _autolabel(rects, ci):
             # Adjust label position to be just above the error bar
             error_bar_height = c if isinstance(c, float) else 0
             ax.annotate(
-                f"{height:.2%}\n±{c:.2%}",
+                f"{height:.1%} ± {c:.1%}",
                 xy=(
                     rect.get_x() + rect.get_width() / 2,
                     height + error_bar_height,
