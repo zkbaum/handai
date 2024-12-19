@@ -85,12 +85,12 @@ gpt4ofilesearch_accuracy, gpt4ofilesearch_ci = _calculate_chatgpt_accuracy_and_c
 
 # Bar chart plot
 labels = [
-    f"human\n(on {NUM_HUMAN_EXAMINEES} examinees)",
+    f"Human\n(on {NUM_HUMAN_EXAMINEES} examinees)",
     # "gpt3.5 - image\n not supported\n(run 10 times)",
     # "gpt4",
-    "gpt4o",
-    "gpt4o with\nbetter prompt",
-    "gpt4o with\nfile search",
+    "ChatGPT 4o\n(experiment 2)",
+    "ChatGPT 4o with\nbetter prompt\n(experiment 3)",
+    "ChatGPT 4o with\nfile search\n(experiment 4)",
     # "gpt4o with\nfile search and\nbetter prompt",
 ]
 text_accuracies = [
@@ -168,7 +168,7 @@ rects2 = ax.bar(
 ax.set_ylim([0, 1])
 ax.set_xlabel("Group")
 ax.set_ylabel("Accuracy")
-ax.set_title("[2013 only] Performance of humans vs ChatGPT on self-assessment exam")
+ax.set_title("Performance of Humans vs ChatGPT on self-assessment exam (2013 only)")
 ax.set_xticks(x)
 ax.set_xticklabels(labels, fontsize=12)
 ax.legend()

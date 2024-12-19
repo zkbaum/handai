@@ -78,9 +78,9 @@ text_count, image_count = _calculate_question_counts()
 # Bar chart plot
 labels = [
     "Human",
-    "GPT-3.5\n(Image not supported)",
-    "GPT-4o",
-    "GPT-4o with\nbetter prompt",
+    "ChatGPT 3.5 - text only\n(experiment 1)",
+    "ChatGPT 4o\n(experiment 2)",
+    "ChatGPT 4o with\nbetter prompt\n(experiment 3)",
 ]
 text_accuracies = [
     human_accuracy.get("Text", 0),
@@ -188,7 +188,7 @@ rects2_without_ci = ax.bar(
 ax.set_ylim([0, 1])
 ax.set_xlabel("Group")
 ax.set_ylabel("Accuracy")
-ax.set_title("Performance of humans vs ChatGPT on 5 years of self-assessment exams")
+ax.set_title("Performance of Humans vs ChatGPT on self-assessment exams (2009-2013)")
 ax.set_xticks(x)
 ax.set_xticklabels(labels, fontsize=12)
 
