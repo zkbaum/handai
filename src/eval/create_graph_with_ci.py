@@ -168,7 +168,9 @@ rects2 = ax.bar(
 ax.set_ylim([0, 1])
 ax.set_xlabel("Group")
 ax.set_ylabel("Accuracy")
-ax.set_title("Performance of Humans vs ChatGPT on self-assessment exam (2013 only)")
+ax.set_title(
+    "Performance of Humans vs ChatGPT on self-assessment exam (2013 only), with and without file search"
+)
 ax.set_xticks(x)
 ax.set_xticklabels(labels, fontsize=12)
 ax.legend()

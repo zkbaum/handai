@@ -188,7 +188,9 @@ rects2_without_ci = ax.bar(
 ax.set_ylim([0, 1])
 ax.set_xlabel("Group")
 ax.set_ylabel("Accuracy")
-ax.set_title("Performance of Humans vs ChatGPT on self-assessment exams (2009-2013)")
+ax.set_title(
+    "Performance of Humans vs ChatGPT on self-assessment exams (2009-2013), with and without better prompting"
+)
 ax.set_xticks(x)
 ax.set_xticklabels(labels, fontsize=12)
 
