@@ -1,6 +1,10 @@
 # Hand AI 
 
-Here is the code used in the following article: TODO(zkbaum) add link to article.
+In 2024, I did some benchmarking with ChatGPT on hand surgery exams.  
+
+In March 2025, the work was published in _HAND_, a peer-reviewed journal for hand surgery: https://doi.org/10.1177/15589447251322914
+
+This repo contains the code used in the paper. At the point, the code is probably outdated, but hopefully it gives you an idea of what went into the benchmarking. 
 
 ## Structure
 
@@ -15,4 +19,4 @@ Here is the code used in the following article: TODO(zkbaum) add link to article
 
 * I am making the code public to show how the automation works. If you are interested in running this yourself, note the code will not work out-of-the-box because I did not make the dataset public (it is owned by the ASSH) and many paths are hard-coded to my machine. 
 * This is a side project, meaning the code is not up to industry standards (e.g. no tests, limited documentation, etc). This does not reflect my code quality standards for professional software engineering projects.
-* If you have any questions, feel free to open an issue.
+* If you have any questions or would like access to the paper, feel free to open an issue.
